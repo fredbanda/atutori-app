@@ -1,13 +1,13 @@
-import { neon } from "@neondatabase/serverless"
+import { neon } from "@neondatabase/serverless";
 
-const databaseUrl = process.env.DATABASE_URL
+const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
-  throw new Error("DATABASE_URL environment variable is not set")
+  throw new Error("DATABASE_URL environment variable is not set");
 }
-const sql = neon(databaseUrl)
+const sql = neon(databaseUrl);
 
 async function setupDatabase() {
-  console.log("Setting up database tables for Atutori...")
+  console.log("Setting up database tables for eatutori...");
 
   // Create user table
   await sql`
@@ -24,8 +24,8 @@ async function setupDatabase() {
       "streakDays" INTEGER DEFAULT 0,
       "lastActiveAt" TIMESTAMP
     )
-  `
-  console.log("Created user table")
+  `;
+  console.log("Created user table");
 
   // Create session table
   await sql`
@@ -39,8 +39,8 @@ async function setupDatabase() {
       "userAgent" TEXT,
       "userId" TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE
     )
-  `
-  console.log("Created session table")
+  `;
+  console.log("Created session table");
 
   // Create account table
   await sql`
@@ -59,8 +59,8 @@ async function setupDatabase() {
       "createdAt" TIMESTAMP DEFAULT NOW(),
       "updatedAt" TIMESTAMP DEFAULT NOW()
     )
-  `
-  console.log("Created account table")
+  `;
+  console.log("Created account table");
 
   // Create verification table
   await sql`
@@ -72,15 +72,16 @@ async function setupDatabase() {
       "createdAt" TIMESTAMP DEFAULT NOW(),
       "updatedAt" TIMESTAMP DEFAULT NOW()
     )
-  `
-  console.log("Created verification table")
+  `;
+  console.log("Created verification table");
 
-  console.log("Database setup complete!")
+  console.log("Database setup complete!");
 }
 
 setupDatabase()
   .then(() => process.exit(0))
   .catch((err) => {
-    console.error("Error setting up database:", err)
-    process.exit(1)
-  })
+    console.error("Error setting up database:", err);
+    process.exit(1);
+  });
+

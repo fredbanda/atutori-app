@@ -1,7 +1,7 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { BookOpen, Sparkles, Star, Trophy, Zap, Users } from "lucide-react"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { BookOpen, Sparkles, Star, Trophy, Zap, Users } from "lucide-react";
 
 export default function LandingPage() {
   return (
@@ -14,7 +14,7 @@ export default function LandingPage() {
               <BookOpen className="h-8 w-8 text-primary" strokeWidth={1.5} />
               <Sparkles className="h-4 w-4 absolute -top-1 -right-1 text-accent-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground">atutori</span>
+            <span className="text-xl font-bold text-foreground">eatutori</span>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" asChild>
@@ -39,8 +39,9 @@ export default function LandingPage() {
             <span className="text-primary"> AI Magic</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground text-pretty">
-            Atutori transforms education into an exciting adventure. With personalized AI tutoring, 
-            gamified lessons, and engaging quizzes, your child will love learning!
+            eatutori transforms education into an exciting adventure. With
+            personalized AI tutoring, gamified lessons, and engaging quizzes,
+            your child will love learning!
           </p>
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Button size="lg" className="h-14 px-8 text-lg" asChild>
@@ -49,7 +50,12 @@ export default function LandingPage() {
                 <Zap className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="h-14 px-8 text-lg" asChild>
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-14 px-8 text-lg"
+              asChild
+            >
               <Link href="/sign-in">I Have an Account</Link>
             </Button>
           </div>
@@ -60,7 +66,7 @@ export default function LandingPage() {
       <section className="px-4 py-16 bg-muted/50">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-3xl font-bold text-center text-foreground mb-12">
-            Why Kids Love Atutori
+            Why Kids Love eatutori
           </h2>
           <div className="grid gap-6 md:grid-cols-3">
             <FeatureCard
@@ -92,7 +98,8 @@ export default function LandingPage() {
             Explore Amazing Subjects
           </h2>
           <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            From Math to Music, Science to Art - discover engaging lessons across all your favorite subjects!
+            From Math to Music, Science to Art - discover engaging lessons
+            across all your favorite subjects!
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             {["Math", "English", "Science", "Art", "Music"].map((subject) => (
@@ -119,9 +126,14 @@ export default function LandingPage() {
                 Join Thousands of Happy Learners!
               </h2>
               <p className="text-primary-foreground/90 mb-8 max-w-lg mx-auto">
-                Start your learning adventure today. It only takes a minute to create an account!
+                Start your learning adventure today. It only takes a minute to
+                create an account!
               </p>
-              <Button size="lg" className="h-14 px-8 text-lg bg-white text-primary hover:bg-white/90" asChild>
+              <Button
+                size="lg"
+                className="h-14 px-8 text-lg bg-white text-primary hover:bg-white/90"
+                asChild
+              >
                 <Link href="/sign-up">Create Free Account</Link>
               </Button>
             </CardContent>
@@ -134,7 +146,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl flex flex-col items-center gap-4 md:flex-row md:justify-between">
           <div className="flex items-center gap-2">
             <BookOpen className="h-6 w-6 text-primary" strokeWidth={1.5} />
-            <span className="font-bold text-foreground">atutori</span>
+            <span className="font-bold text-foreground">eatutori</span>
           </div>
           <p className="text-sm text-muted-foreground">
             Making learning an adventure, one lesson at a time.
@@ -142,21 +154,26 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
-  )
+  );
 }
 
 interface FeatureCardProps {
-  icon: React.ComponentType<{ className?: string }>
-  title: string
-  description: string
-  color: string
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  color: string;
 }
 
-function FeatureCard({ icon: Icon, title, description, color }: FeatureCardProps) {
+function FeatureCard({
+  icon: Icon,
+  title,
+  description,
+  color,
+}: FeatureCardProps) {
   return (
     <Card className="rounded-2xl border-2 hover:border-primary/20 transition-colors">
       <CardContent className="p-6">
-        <div 
+        <div
           className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl"
           style={{ backgroundColor: color }}
         >
@@ -166,5 +183,6 @@ function FeatureCard({ icon: Icon, title, description, color }: FeatureCardProps
         <p className="text-muted-foreground">{description}</p>
       </CardContent>
     </Card>
-  )
+  );
 }
+

@@ -1,28 +1,51 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { BookOpen, GraduationCap, Sparkles, Star, Rocket, Brain, Palette, Waves, TreePine, Candy, Sun, Snowflake, Check } from "lucide-react"
-import { useTheme, themes, type ThemeName } from "@/components/atutori/theme-provider"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  BookOpen,
+  GraduationCap,
+  Sparkles,
+  Star,
+  Rocket,
+  Brain,
+  Palette,
+  Waves,
+  TreePine,
+  Candy,
+  Sun,
+  Snowflake,
+  Check,
+} from "lucide-react";
+import {
+  useTheme,
+  themes,
+  type ThemeName,
+} from "@/components/eatutori/theme-provider";
 
-type GradeGroup = "primary-early" | "primary-mid" | "primary-upper" | "high-junior" | "high-senior"
+type GradeGroup =
+  | "primary-early"
+  | "primary-mid"
+  | "primary-upper"
+  | "high-junior"
+  | "high-senior";
 
 interface GradeOption {
-  grade: number
-  label: string
-  group: GradeGroup
+  grade: number;
+  label: string;
+  group: GradeGroup;
 }
 
 const gradeGroups: {
-  id: GradeGroup
-  title: string
-  description: string
-  grades: GradeOption[]
-  icon: React.ReactNode
-  color: string
-  bgColor: string
+  id: GradeGroup;
+  title: string;
+  description: string;
+  grades: GradeOption[];
+  icon: React.ReactNode;
+  color: string;
+  bgColor: string;
 }[] = [
   {
     id: "primary-early",
@@ -86,7 +109,7 @@ const gradeGroups: {
     color: "text-purple-600",
     bgColor: "bg-purple-100",
   },
-]
+];
 
 const themeIcons: Record<string, React.ReactNode> = {
   sparkles: <Sparkles className="h-6 w-6" />,
@@ -96,34 +119,36 @@ const themeIcons: Record<string, React.ReactNode> = {
   rocket: <Rocket className="h-6 w-6" />,
   sun: <Sun className="h-6 w-6" />,
   snowflake: <Snowflake className="h-6 w-6" />,
-}
+};
 
 export function OnboardingClient() {
-  const router = useRouter()
-  const { theme, setTheme } = useTheme()
-  const [step, setStep] = useState<"welcome" | "group" | "grade" | "theme">("welcome")
-  const [selectedGroup, setSelectedGroup] = useState<GradeGroup | null>(null)
-  const [selectedGrade, setSelectedGrade] = useState<number | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter();
+  const { theme, setTheme } = useTheme();
+  const [step, setStep] = useState<"welcome" | "group" | "grade" | "theme">(
+    "welcome"
+  );
+  const [selectedGroup, setSelectedGroup] = useState<GradeGroup | null>(null);
+  const [selectedGrade, setSelectedGrade] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const currentGroup = gradeGroups.find((g) => g.id === selectedGroup)
+  const currentGroup = gradeGroups.find((g) => g.id === selectedGroup);
 
   const handleSelectGroup = (groupId: GradeGroup) => {
-    setSelectedGroup(groupId)
-    setStep("grade")
-  }
+    setSelectedGroup(groupId);
+    setStep("grade");
+  };
 
   const handleSelectGrade = (grade: number) => {
-    setSelectedGrade(grade)
-    setStep("theme")
-  }
+    setSelectedGrade(grade);
+    setStep("theme");
+  };
 
   const handleSelectTheme = (themeName: ThemeName) => {
-    setTheme(themeName)
-  }
+    setTheme(themeName);
+  };
 
   const handleFinishOnboarding = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
       // Update user profile with grade info
@@ -134,15 +159,15 @@ export function OnboardingClient() {
           grade: selectedGrade,
           gradeGroup: selectedGroup,
         }),
-      })
+      });
 
       // Navigate to the playground
-      router.push(`/playground/${selectedGroup}`)
+      router.push(`/playground/${selectedGroup}`);
     } catch (error) {
-      console.error("Failed to save grade:", error)
-      setIsLoading(false)
+      console.error("Failed to save grade:", error);
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -154,10 +179,11 @@ export function OnboardingClient() {
               <Brain className="h-12 w-12 text-primary" />
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-              Welcome to Atutori!
+              Welcome to eatutori!
             </h1>
             <p className="text-xl text-muted-foreground max-w-md mx-auto">
-              Your personal AI tutor is ready to help you learn. Let&apos;s set up your learning journey!
+              Your personal AI tutor is ready to help you learn. Let&apos;s set
+              up your learning journey!
             </p>
             <Button
               size="lg"
@@ -192,7 +218,9 @@ export function OnboardingClient() {
                   }`}
                   onClick={() => handleSelectGroup(group.id)}
                 >
-                  <div className={`inline-flex p-3 rounded-xl ${group.bgColor} ${group.color} mb-4`}>
+                  <div
+                    className={`inline-flex p-3 rounded-xl ${group.bgColor} ${group.color} mb-4`}
+                  >
                     {group.icon}
                   </div>
                   <h3 className="text-xl font-bold text-foreground mb-1">
@@ -202,7 +230,8 @@ export function OnboardingClient() {
                     {group.description}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Grades {group.grades[0].grade}-{group.grades[group.grades.length - 1].grade}
+                    Grades {group.grades[0].grade}-
+                    {group.grades[group.grades.length - 1].grade}
                   </p>
                 </Card>
               ))}
@@ -220,22 +249,24 @@ export function OnboardingClient() {
         {step === "grade" && currentGroup && (
           <div className="space-y-8 animate-in fade-in slide-in-from-right duration-500">
             <div className="text-center">
-              <div className={`inline-flex p-4 rounded-2xl ${currentGroup.bgColor} ${currentGroup.color} mb-4`}>
+              <div
+                className={`inline-flex p-4 rounded-2xl ${currentGroup.bgColor} ${currentGroup.color} mb-4`}
+              >
                 {currentGroup.icon}
               </div>
               <h2 className="text-3xl font-bold text-foreground mb-2">
                 {currentGroup.title}
               </h2>
-              <p className="text-muted-foreground">
-                Select your exact grade
-              </p>
+              <p className="text-muted-foreground">Select your exact grade</p>
             </div>
 
             <div className="flex flex-wrap justify-center gap-4">
               {currentGroup.grades.map((gradeOption) => (
                 <Button
                   key={gradeOption.grade}
-                  variant={selectedGrade === gradeOption.grade ? "default" : "outline"}
+                  variant={
+                    selectedGrade === gradeOption.grade ? "default" : "outline"
+                  }
                   size="lg"
                   className={`text-xl px-8 py-8 rounded-2xl min-w-[140px] ${
                     selectedGrade === gradeOption.grade ? "" : "hover:bg-accent"
@@ -290,7 +321,9 @@ export function OnboardingClient() {
                         {themeIcons[t.icon]}
                       </div>
                     </div>
-                    <p className="font-semibold text-sm text-center">{t.label}</p>
+                    <p className="font-semibold text-sm text-center">
+                      {t.label}
+                    </p>
                     <div className="flex gap-1">
                       {t.preview.map((color, i) => (
                         <div
@@ -318,7 +351,9 @@ export function OnboardingClient() {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <span className="animate-pulse">Starting your journey...</span>
+                  <span className="animate-pulse">
+                    Starting your journey...
+                  </span>
                 ) : (
                   "Start Learning!"
                 )}
@@ -333,5 +368,6 @@ export function OnboardingClient() {
         )}
       </div>
     </div>
-  )
+  );
 }
+

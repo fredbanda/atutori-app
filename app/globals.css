@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Atutori - Playful Kid-Friendly Theme */
+  /* eatutori - Playful Kid-Friendly Theme */
   --background: oklch(0.98 0.01 90);
   --foreground: oklch(0.25 0.03 260);
   --card: oklch(1 0 0);

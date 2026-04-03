@@ -1,17 +1,25 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Calculator, BookOpen, Microscope, Palette, Music, ChevronRight, Sparkles } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { XPBadge } from "./xp-badge"
-import { ProgressRing } from "./progress-ring"
-import { SubjectCard } from "./subject-card"
+import { useState } from "react";
+import {
+  Calculator,
+  BookOpen,
+  Microscope,
+  Palette,
+  Music,
+  ChevronRight,
+  Sparkles,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { XPBadge } from "./xp-badge";
+import { ProgressRing } from "./progress-ring";
+import { SubjectCard } from "./subject-card";
 
 interface DashboardProps {
-  studentName: string
-  onStartLesson: (subject: string) => void
-  onContinueLearning: () => void
+  studentName: string;
+  onStartLesson: (subject: string) => void;
+  onContinueLearning: () => void;
 }
 
 const subjects = [
@@ -22,7 +30,7 @@ const subjects = [
     progress: 65,
     lessonsCompleted: 13,
     totalLessons: 20,
-    color: "oklch(0.65 0.18 175)"
+    color: "oklch(0.65 0.18 175)",
   },
   {
     id: "english",
@@ -31,7 +39,7 @@ const subjects = [
     progress: 45,
     lessonsCompleted: 9,
     totalLessons: 20,
-    color: "oklch(0.75 0.15 280)"
+    color: "oklch(0.75 0.15 280)",
   },
   {
     id: "science",
@@ -40,7 +48,7 @@ const subjects = [
     progress: 30,
     lessonsCompleted: 6,
     totalLessons: 20,
-    color: "oklch(0.7 0.18 145)"
+    color: "oklch(0.7 0.18 145)",
   },
   {
     id: "art",
@@ -49,7 +57,7 @@ const subjects = [
     progress: 80,
     lessonsCompleted: 16,
     totalLessons: 20,
-    color: "oklch(0.85 0.15 50)"
+    color: "oklch(0.85 0.15 50)",
   },
   {
     id: "music",
@@ -58,21 +66,25 @@ const subjects = [
     progress: 55,
     lessonsCompleted: 11,
     totalLessons: 20,
-    color: "oklch(0.75 0.18 330)"
-  }
-]
+    color: "oklch(0.75 0.18 330)",
+  },
+];
 
-export function Dashboard({ studentName, onStartLesson, onContinueLearning }: DashboardProps) {
-  const [selectedSubject, setSelectedSubject] = useState<string | null>(null)
-  
+export function Dashboard({
+  studentName,
+  onStartLesson,
+  onContinueLearning,
+}: DashboardProps) {
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+
   const totalProgress = Math.round(
     subjects.reduce((acc, s) => acc + s.progress, 0) / subjects.length
-  )
+  );
 
   const handleSubjectClick = (subjectId: string) => {
-    setSelectedSubject(subjectId)
-    onStartLesson(subjectId)
-  }
+    setSelectedSubject(subjectId);
+    onStartLesson(subjectId);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,7 +95,7 @@ export function Dashboard({ studentName, onStartLesson, onContinueLearning }: Da
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-sm">
               <Sparkles className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground">Atutori</span>
+            <span className="text-xl font-bold text-foreground">eatutori</span>
           </div>
           <XPBadge xp={1250} level={5} />
         </div>
@@ -100,9 +112,11 @@ export function Dashboard({ studentName, onStartLesson, onContinueLearning }: Da
                   Hi, {studentName}!
                 </h1>
                 <p className="mb-4 text-primary-foreground/90">
-                  {"You're doing amazing! Keep up the great work and earn more XP!"}
+                  {
+                    "You're doing amazing! Keep up the great work and earn more XP!"
+                  }
                 </p>
-                <Button 
+                <Button
                   onClick={onContinueLearning}
                   size="lg"
                   className="rounded-xl bg-white px-6 text-primary shadow-md hover:bg-white/90 hover:shadow-lg"
@@ -111,9 +125,15 @@ export function Dashboard({ studentName, onStartLesson, onContinueLearning }: Da
                   <ChevronRight className="ml-1 h-5 w-5" />
                 </Button>
               </div>
-              <ProgressRing progress={totalProgress} size={140} strokeWidth={12}>
+              <ProgressRing
+                progress={totalProgress}
+                size={140}
+                strokeWidth={12}
+              >
                 <div className="text-center">
-                  <span className="text-3xl font-bold text-primary-foreground">{totalProgress}%</span>
+                  <span className="text-3xl font-bold text-primary-foreground">
+                    {totalProgress}%
+                  </span>
                   <p className="text-xs text-primary-foreground/80">Overall</p>
                 </div>
               </ProgressRing>
@@ -125,7 +145,9 @@ export function Dashboard({ studentName, onStartLesson, onContinueLearning }: Da
         <section>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-bold text-foreground">Your Subjects</h2>
-            <span className="text-sm text-muted-foreground">{subjects.length} subjects</span>
+            <span className="text-sm text-muted-foreground">
+              {subjects.length} subjects
+            </span>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {subjects.map((subject) => (
@@ -145,30 +167,32 @@ export function Dashboard({ studentName, onStartLesson, onContinueLearning }: Da
 
         {/* Recent Activity */}
         <section className="mt-8">
-          <h2 className="mb-4 text-xl font-bold text-foreground">Recent Activity</h2>
+          <h2 className="mb-4 text-xl font-bold text-foreground">
+            Recent Activity
+          </h2>
           <Card className="rounded-2xl">
             <CardContent className="divide-y divide-border p-0">
-              <ActivityItem 
-                subject="Math" 
-                lesson="Understanding Fractions" 
-                score={4} 
-                total={5} 
+              <ActivityItem
+                subject="Math"
+                lesson="Understanding Fractions"
+                score={4}
+                total={5}
                 time="2 hours ago"
                 color="oklch(0.65 0.18 175)"
               />
-              <ActivityItem 
-                subject="English" 
-                lesson="Reading Comprehension" 
-                score={5} 
-                total={5} 
+              <ActivityItem
+                subject="English"
+                lesson="Reading Comprehension"
+                score={5}
+                total={5}
                 time="Yesterday"
                 color="oklch(0.75 0.15 280)"
               />
-              <ActivityItem 
-                subject="Science" 
-                lesson="The Water Cycle" 
-                score={3} 
-                total={5} 
+              <ActivityItem
+                subject="Science"
+                lesson="The Water Cycle"
+                score={3}
+                total={5}
                 time="2 days ago"
                 color="oklch(0.7 0.18 145)"
               />
@@ -177,23 +201,30 @@ export function Dashboard({ studentName, onStartLesson, onContinueLearning }: Da
         </section>
       </main>
     </div>
-  )
+  );
 }
 
 interface ActivityItemProps {
-  subject: string
-  lesson: string
-  score: number
-  total: number
-  time: string
-  color: string
+  subject: string;
+  lesson: string;
+  score: number;
+  total: number;
+  time: string;
+  color: string;
 }
 
-function ActivityItem({ subject, lesson, score, total, time, color }: ActivityItemProps) {
+function ActivityItem({
+  subject,
+  lesson,
+  score,
+  total,
+  time,
+  color,
+}: ActivityItemProps) {
   return (
     <div className="flex items-center gap-4 p-4">
-      <div 
-        className="h-3 w-3 rounded-full" 
+      <div
+        className="h-3 w-3 rounded-full"
         style={{ backgroundColor: color }}
       />
       <div className="flex-1">
@@ -201,9 +232,12 @@ function ActivityItem({ subject, lesson, score, total, time, color }: ActivityIt
         <p className="text-sm text-muted-foreground">{subject}</p>
       </div>
       <div className="text-right">
-        <p className="font-bold text-primary">{score}/{total}</p>
+        <p className="font-bold text-primary">
+          {score}/{total}
+        </p>
         <p className="text-xs text-muted-foreground">{time}</p>
       </div>
     </div>
-  )
+  );
 }
+

@@ -60,7 +60,7 @@ export default function SignInPage() {
               <Sparkles className="h-5 w-5 absolute -top-1 -right-1 text-accent-foreground" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-foreground">atutori</h1>
+          <h1 className="text-3xl font-bold text-foreground">eatutori</h1>
           <p className="text-muted-foreground text-sm">
             Your AI Learning Adventure
           </p>
@@ -92,27 +92,27 @@ export default function SignInPage() {
                 <Field>
                   <FieldLabel htmlFor="password">Password</FieldLabel>
                   <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    className="h-12"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    tabIndex={-1}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={isLoading}
+                      className="h-12"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
                     </button>
                   </div>
                 </Field>
@@ -144,7 +144,7 @@ export default function SignInPage() {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-muted-foreground">
-                New to Atutori?{" "}
+                New to eatutori?{" "}
                 <Link
                   href="/sign-up"
                   className="text-primary font-medium hover:underline"

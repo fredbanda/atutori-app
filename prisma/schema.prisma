@@ -17,7 +17,7 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  // Atutori specific fields
+  // eatutori specific fields
   grade        Int? // 1-12 for grade levels
   gradeGroup   String? // "primary-early", "primary-mid", "primary-upper", "high-junior", "high-senior"
   level        Int       @default(1)

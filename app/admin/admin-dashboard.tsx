@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
-import { authClient } from "@/lib/auth-client"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { authClient } from "@/lib/auth-client";
 import {
   CreditCard,
   Users,
@@ -22,40 +22,40 @@ import {
   BarChart3,
   ArrowRight,
   Loader2,
-} from "lucide-react"
+} from "lucide-react";
 
 interface User {
-  id: string
-  name: string
-  email: string
+  id: string;
+  name: string;
+  email: string;
 }
 
 interface Subscription {
-  id: string
-  packageName: string
-  status: string
-  currentPeriodEnd: string
-  price: number
-  interval: string
+  id: string;
+  packageName: string;
+  status: string;
+  currentPeriodEnd: string;
+  price: number;
+  interval: string;
 }
 
 interface Package {
-  id: string
-  name: string
-  description: string
-  price: number
-  interval: string
-  features: string[]
-  maxStudents: number
-  isPopular: boolean
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  interval: string;
+  features: string[];
+  maxStudents: number;
+  isPopular: boolean;
 }
 
 export function AdminDashboard({ user }: { user: User }) {
-  const router = useRouter()
-  const [subscription, setSubscription] = useState<Subscription | null>(null)
-  const [packages, setPackages] = useState<Package[]>([])
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("overview")
+  const router = useRouter();
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
     async function fetchData() {
@@ -63,52 +63,52 @@ export function AdminDashboard({ user }: { user: User }) {
         const [subRes, pkgRes] = await Promise.all([
           fetch("/api/subscription"),
           fetch("/api/packages"),
-        ])
-        
+        ]);
+
         if (subRes.ok) {
-          const subData = await subRes.json()
-          setSubscription(subData.subscription)
+          const subData = await subRes.json();
+          setSubscription(subData.subscription);
         }
-        
+
         if (pkgRes.ok) {
-          const pkgData = await pkgRes.json()
-          setPackages(pkgData.packages || [])
+          const pkgData = await pkgRes.json();
+          setPackages(pkgData.packages || []);
         }
       } catch (err) {
-        console.error("Failed to fetch data:", err)
+        console.error("Failed to fetch data:", err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
-    fetchData()
-  }, [])
+    fetchData();
+  }, []);
 
   const handleSignOut = async () => {
-    await authClient.signOut()
-    router.push("/")
-  }
+    await authClient.signOut();
+    router.push("/");
+  };
 
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-    }).format(cents / 100)
-  }
+    }).format(cents / 100);
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
-    })
-  }
+    });
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
-    )
+    );
   }
 
   return (
@@ -121,8 +121,10 @@ export function AdminDashboard({ user }: { user: User }) {
               <Crown className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">Atutori Admin</h1>
-              <p className="text-sm text-muted-foreground">Manage your subscription</p>
+              <h1 className="text-xl font-bold">eatutori Admin</h1>
+              <p className="text-sm text-muted-foreground">
+                Manage your subscription
+              </p>
             </div>
           </div>
 
@@ -162,7 +164,9 @@ export function AdminDashboard({ user }: { user: User }) {
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {subscription
-                      ? `${formatPrice(subscription.price)}/${subscription.interval}`
+                      ? `${formatPrice(subscription.price)}/${
+                          subscription.interval
+                        }`
                       : "Choose a plan to get started"}
                   </p>
                 </CardContent>
@@ -257,17 +261,22 @@ export function AdminDashboard({ user }: { user: User }) {
                   <CardContent className="space-y-4">
                     <div className="flex items-center justify-between p-4 bg-muted rounded-xl">
                       <div>
-                        <h4 className="font-bold text-lg">{subscription.packageName}</h4>
+                        <h4 className="font-bold text-lg">
+                          {subscription.packageName}
+                        </h4>
                         <p className="text-muted-foreground">
-                          {formatPrice(subscription.price)} / {subscription.interval}
+                          {formatPrice(subscription.price)} /{" "}
+                          {subscription.interval}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          subscription.status === "active"
-                            ? "bg-green-100 text-green-700"
-                            : "bg-amber-100 text-amber-700"
-                        }`}>
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            subscription.status === "active"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-amber-100 text-amber-700"
+                          }`}
+                        >
                           {subscription.status}
                         </span>
                       </div>
@@ -276,14 +285,20 @@ export function AdminDashboard({ user }: { user: User }) {
                     <div className="flex items-center gap-4">
                       <Calendar className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Next billing date</p>
-                        <p className="font-medium">{formatDate(subscription.currentPeriodEnd)}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Next billing date
+                        </p>
+                        <p className="font-medium">
+                          {formatDate(subscription.currentPeriodEnd)}
+                        </p>
                       </div>
                     </div>
 
                     <div className="flex gap-3">
                       <Button variant="outline">Change Plan</Button>
-                      <Button variant="destructive" className="bg-red-600">Cancel Subscription</Button>
+                      <Button variant="destructive" className="bg-red-600">
+                        Cancel Subscription
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -291,7 +306,9 @@ export function AdminDashboard({ user }: { user: User }) {
             ) : (
               <div className="text-center py-12">
                 <CreditCard className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-bold mb-2">No Active Subscription</h3>
+                <h3 className="text-xl font-bold mb-2">
+                  No Active Subscription
+                </h3>
                 <p className="text-muted-foreground mb-6">
                   Choose a plan to unlock all features and start learning!
                 </p>
@@ -306,7 +323,10 @@ export function AdminDashboard({ user }: { user: User }) {
             <h3 className="text-lg font-bold mt-8 mb-4">Available Plans</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {packages.map((pkg) => (
-                <Card key={pkg.id} className={pkg.isPopular ? "border-primary border-2" : ""}>
+                <Card
+                  key={pkg.id}
+                  className={pkg.isPopular ? "border-primary border-2" : ""}
+                >
                   {pkg.isPopular && (
                     <div className="bg-primary text-primary-foreground text-center py-1 text-sm font-medium">
                       Most Popular
@@ -322,7 +342,9 @@ export function AdminDashboard({ user }: { user: User }) {
                         /{pkg.interval}
                       </span>
                     </div>
-                    <p className="text-muted-foreground mb-4">{pkg.description}</p>
+                    <p className="text-muted-foreground mb-4">
+                      {pkg.description}
+                    </p>
                     <ul className="space-y-2 mb-6">
                       {pkg.features.map((feature, i) => (
                         <li key={i} className="flex items-center gap-2 text-sm">
@@ -331,8 +353,13 @@ export function AdminDashboard({ user }: { user: User }) {
                         </li>
                       ))}
                     </ul>
-                    <Button className="w-full" variant={pkg.isPopular ? "default" : "outline"}>
-                      {subscription?.packageName === pkg.name ? "Current Plan" : "Choose Plan"}
+                    <Button
+                      className="w-full"
+                      variant={pkg.isPopular ? "default" : "outline"}
+                    >
+                      {subscription?.packageName === pkg.name
+                        ? "Current Plan"
+                        : "Choose Plan"}
                     </Button>
                   </CardContent>
                 </Card>
@@ -354,7 +381,9 @@ export function AdminDashboard({ user }: { user: User }) {
                 <div className="text-center py-12 text-muted-foreground">
                   <Users className="h-16 w-16 mx-auto mb-4 opacity-50" />
                   <p>No students added yet</p>
-                  <p className="text-sm">Add students to track their progress</p>
+                  <p className="text-sm">
+                    Add students to track their progress
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -374,7 +403,9 @@ export function AdminDashboard({ user }: { user: User }) {
                 <div className="text-center py-12 text-muted-foreground">
                   <Video className="h-16 w-16 mx-auto mb-4 opacity-50" />
                   <p>No videos uploaded yet</p>
-                  <p className="text-sm">Upload educational videos for your students</p>
+                  <p className="text-sm">
+                    Upload educational videos for your students
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -382,5 +413,6 @@ export function AdminDashboard({ user }: { user: User }) {
         </Tabs>
       </main>
     </div>
-  )
+  );
 }
+
