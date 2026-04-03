@@ -66,7 +66,7 @@ export default function LandingPage() {
       <section className="px-4 py-16 bg-muted/50">
         <div className="mx-auto max-w-6xl">
           <h2 className="text-3xl font-bold text-center text-foreground mb-12">
-            Why Kids Love eatutori
+            Why Kids Love Eatutori
           </h2>
           <div className="grid gap-6 md:grid-cols-3">
             <FeatureCard
