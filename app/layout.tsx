@@ -3,6 +3,7 @@ import { Nunito } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/eatutori/theme-provider";
 import "./globals.css";
+import { Footer } from "@/components/eatutori/footer";
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body className={`${nunito.className} antialiased`}>
         <ThemeProvider>{children}</ThemeProvider>
         <Analytics />
+        <Footer />
       </body>
     </html>
   );

@@ -140,19 +140,6 @@ export default function LandingPage() {
           </Card>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="border-t border-border px-4 py-8">
-        <div className="mx-auto max-w-6xl flex flex-col items-center gap-4 md:flex-row md:justify-between">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-primary" strokeWidth={1.5} />
-            <span className="font-bold text-foreground">eatutori</span>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Making learning an adventure, one lesson at a time.
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

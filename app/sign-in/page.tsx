@@ -60,9 +60,9 @@ export default function SignInPage() {
               <Sparkles className="h-5 w-5 absolute -top-1 -right-1 text-accent-foreground" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-foreground">eatutori</h1>
+          <h1 className="text-3xl font-bold text-foreground">Eatutori</h1>
           <p className="text-muted-foreground text-sm">
-            Your AI Learning Adventure
+            Where stars are made through learning
           </p>
         </div>
 
