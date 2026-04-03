@@ -2,10 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { authClient } from "@/lib/auth-client"
 import { MediaWindow } from "@/components/atutori/media-window"
 import {
   Calculator,
@@ -21,10 +19,6 @@ import {
   PenTool,
   Lightbulb,
   Star,
-  Flame,
-  Trophy,
-  LogOut,
-  Settings,
   ChevronRight,
   Sparkles,
   Rocket,
@@ -178,11 +172,6 @@ export function PlaygroundClient({
   const xpForNextLevel = user.level * 100
   const xpProgress = (user.xp % 100) / 100 * 100
 
-  const handleSignOut = async () => {
-    await authClient.signOut()
-    router.push("/")
-  }
-
   const handleStartLesson = (subjectId: string) => {
     router.push(`/playground/${gradeGroup}/lesson/${subjectId}`)
   }
@@ -192,56 +181,7 @@ export function PlaygroundClient({
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className={`bg-gradient-to-r ${config.theme.primary} text-white`}>
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">
-                {config.icon}
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">{config.title}</h1>
-                <p className="text-white/80">{config.subtitle} - Grade {user.grade}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              {/* Streak */}
-              <div className="flex items-center gap-2 bg-white/20 rounded-xl px-4 py-2 backdrop-blur-sm">
-                <Flame className="h-5 w-5 text-orange-300" />
-                <span className="font-bold">{user.streakDays}</span>
-              </div>
-
-              {/* XP */}
-              <div className="flex items-center gap-2 bg-white/20 rounded-xl px-4 py-2 backdrop-blur-sm">
-                <Star className="h-5 w-5 text-yellow-300" />
-                <span className="font-bold">{user.xp} XP</span>
-              </div>
-
-              {/* Level */}
-              <div className="flex items-center gap-2 bg-white/20 rounded-xl px-4 py-2 backdrop-blur-sm">
-                <Trophy className="h-5 w-5 text-amber-300" />
-                <span className="font-bold">Lv. {user.level}</span>
-              </div>
-
-              {/* User Menu */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-white/20"
-                onClick={handleSignOut}
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Welcome Banner */}
         <Card className="mb-8 p-6 bg-gradient-to-br from-card to-accent/20 border-none">
           <div className="flex items-center justify-between">
@@ -359,7 +299,7 @@ export function PlaygroundClient({
             </div>
           </div>
         </Card>
-      </main>
+      </div>
     </div>
   )
 }

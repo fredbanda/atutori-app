@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { neon } from "@neondatabase/serverless"
+import { SubjectNav } from "@/components/atutori/subject-nav"
+import { PlaygroundHeader } from "@/components/atutori/playground-header"
 
 const sql = neon(process.env.DATABASE_URL!)
 
@@ -23,7 +25,8 @@ export default async function PlaygroundLayout({
   // Check if user belongs to this grade group
   const { gradeGroup } = await params
   const [user] = await sql`
-    SELECT grade, "gradeGroup", onboarded FROM "user" WHERE id = ${session.user.id}
+    SELECT id, name, email, grade, "gradeGroup", level, xp, "streakDays", onboarded 
+    FROM "user" WHERE id = ${session.user.id}
   `
 
   if (!user?.onboarded) {
@@ -34,5 +37,13 @@ export default async function PlaygroundLayout({
     redirect(`/playground/${user.gradeGroup}`)
   }
 
-  return <>{children}</>
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <PlaygroundHeader user={user} gradeGroup={gradeGroup} />
+      <SubjectNav gradeGroup={gradeGroup} />
+      <main className="flex-1">
+        {children}
+      </main>
+    </div>
+  )
 }

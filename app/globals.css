@@ -178,3 +178,12 @@
 .animate-celebrate {
   animation: celebrate 0.5s ease-in-out;
 }
+
+/* Hide scrollbar for subject navigation */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
