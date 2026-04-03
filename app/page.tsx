@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { Footer } from "@/components/atutori/footer"
 import { BookOpen, Sparkles, Star, Trophy, Zap, Users } from "lucide-react"
 
 export default function LandingPage() {
@@ -130,17 +131,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border px-4 py-8">
-        <div className="mx-auto max-w-6xl flex flex-col items-center gap-4 md:flex-row md:justify-between">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-primary" strokeWidth={1.5} />
-            <span className="font-bold text-foreground">atutori</span>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Making learning an adventure, one lesson at a time.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

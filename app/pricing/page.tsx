@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
+import { Footer } from "@/components/atutori/footer"
 import {
   CheckCircle,
   Star,
@@ -283,6 +284,9 @@ export default function PricingPage() {
           </Button>
         </div>
       </section>
+
+      {/* Footer */}
+      <Footer />
     </div>
   )
 }
