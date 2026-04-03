@@ -1,33 +1,33 @@
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String   @id @default(cuid())
   name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
+  email         String   @unique
+  emailVerified Boolean  @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Atutori specific fields
-  grade         Int?      // 1-12 for grade levels
-  gradeGroup    String?   // "primary-early", "primary-mid", "primary-upper", "high-junior", "high-senior"
-  level         Int       @default(1)
-  xp            Int       @default(0)
-  streakDays    Int       @default(0)
-  lastActiveAt  DateTime?
-  onboarded     Boolean   @default(false)
+  grade        Int? // 1-12 for grade levels
+  gradeGroup   String? // "primary-early", "primary-mid", "primary-upper", "high-junior", "high-senior"
+  level        Int       @default(1)
+  xp           Int       @default(0)
+  streakDays   Int       @default(0)
+  lastActiveAt DateTime?
+  onboarded    Boolean   @default(false)
 
-  sessions      Session[]
-  accounts      Account[]
+  sessions Session[]
+  accounts Account[]
 
   @@map("user")
 }
@@ -78,18 +78,18 @@ model Verification {
 
 // Media uploaded by tutors/parents for students
 model Media {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  url         String   // Video URL (YouTube, Vimeo, etc.)
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  url          String // Video URL (YouTube, Vimeo, etc.)
   thumbnailUrl String?
-  duration    Int?     // Duration in seconds
-  gradeGroup  String   // Target grade group
-  subjectId   String?  // Optional subject association
-  uploadedById String  // Tutor/Parent who uploaded
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  duration     Int? // Duration in seconds
+  gradeGroup   String // Target grade group
+  subjectId    String? // Optional subject association
+  uploadedById String // Tutor/Parent who uploaded
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
   assignments MediaAssignment[]
 
   @@map("media")
@@ -97,17 +97,17 @@ model Media {
 
 // Many-to-many: Media assigned to students
 model MediaAssignment {
-  id         String   @id @default(cuid())
-  mediaId    String
-  media      Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-  studentId  String   // User ID of student
-  assignedById String // Tutor/Parent who assigned
-  watched    Boolean  @default(false)
-  watchedAt  DateTime?
-  quizCompleted Boolean @default(false)
-  quizScore  Int?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            String    @id @default(cuid())
+  mediaId       String
+  media         Media     @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  studentId     String // User ID of student
+  assignedById  String // Tutor/Parent who assigned
+  watched       Boolean   @default(false)
+  watchedAt     DateTime?
+  quizCompleted Boolean   @default(false)
+  quizScore     Int?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@unique([mediaId, studentId])
   @@map("media_assignment")
@@ -118,8 +118,8 @@ model Package {
   id          String   @id @default(cuid())
   name        String
   description String
-  price       Int      // Price in cents
-  interval    String   // "monthly", "yearly", "lifetime"
+  price       Int // Price in cents
+  interval    String // "monthly", "yearly", "lifetime"
   features    String[] // List of features
   maxStudents Int      @default(1) // Max students per subscription
   isPopular   Boolean  @default(false)
@@ -134,16 +134,16 @@ model Package {
 
 // User subscriptions
 model Subscription {
-  id            String   @id @default(cuid())
-  userId        String   
-  packageId     String
-  package       Package  @relation(fields: [packageId], references: [id])
-  status        String   // "active", "cancelled", "expired", "trialing"
+  id                 String    @id @default(cuid())
+  userId             String
+  packageId          String
+  package            Package   @relation(fields: [packageId], references: [id])
+  status             String // "active", "cancelled", "expired", "trialing"
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
-  cancelledAt   DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  cancelledAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   @@map("subscription")
 }

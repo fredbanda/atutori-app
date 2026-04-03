@@ -300,6 +300,6 @@ export function PlaygroundClient({
           </div>
         </Card>
       </div>
-    </div>
+  
   )
 }

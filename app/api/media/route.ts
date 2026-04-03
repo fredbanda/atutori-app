@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { headers } from "next/headers"
 import { auth } from "@/lib/auth"
-import { redis, cacheKeys, CACHE_TTL } from "@/lib/redis"
+import { redis, CACHE_KEYS, CACHE_TTL } from "@/lib/redis"
 import { neon } from "@neondatabase/serverless"
 
 const sql = neon(process.env.DATABASE_URL!)
@@ -19,7 +19,7 @@ export async function GET() {
     const userId = session.user.id
 
     // Try to get from cache first
-    const cacheKey = cacheKeys.userMedia(userId)
+    const cacheKey = CACHE_KEYS.userMedia(userId)
     const cached = await redis.get(cacheKey)
     if (cached) {
       return NextResponse.json({ media: cached, fromCache: true })
@@ -49,7 +49,7 @@ export async function GET() {
     `
 
     // Cache for 5 minutes
-    await redis.set(cacheKey, media, { ex: CACHE_TTL.MEDIUM })
+    await redis.set(cacheKey, media, { ex: CACHE_TTL.media })
 
     return NextResponse.json({ media, fromCache: false })
   } catch (error) {
