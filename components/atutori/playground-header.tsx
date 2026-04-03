@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { authClient } from "@/lib/auth-client"
+import { ThemeSelector } from "./theme-selector"
 import {
   Star,
   Flame,
@@ -108,7 +109,10 @@ export function PlaygroundHeader({ user, gradeGroup }: { user: User; gradeGroup:
               <span className="font-bold text-sm">Lv. {user.level}</span>
             </div>
 
-            {/* User Menu */}
+            {/* Theme Selector */}
+            <ThemeSelector />
+
+            {/* Sign Out */}
             <Button
               variant="ghost"
               size="icon"

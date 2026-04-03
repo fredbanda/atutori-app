@@ -58,6 +58,164 @@
   --sidebar-ring: oklch(0.65 0.18 175);
 }
 
+/* Ocean Adventure Theme - Blue ocean vibes */
+[data-theme="ocean"] {
+  --background: oklch(0.97 0.01 220);
+  --foreground: oklch(0.25 0.04 240);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.25 0.04 240);
+  --primary: oklch(0.6 0.18 240);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.9 0.06 200);
+  --secondary-foreground: oklch(0.35 0.06 240);
+  --muted: oklch(0.95 0.02 220);
+  --muted-foreground: oklch(0.5 0.03 240);
+  --accent: oklch(0.7 0.14 190);
+  --accent-foreground: oklch(0.2 0.05 190);
+  --success: oklch(0.7 0.18 170);
+  --success-foreground: oklch(1 0 0);
+  --border: oklch(0.9 0.02 220);
+  --input: oklch(0.95 0.01 220);
+  --ring: oklch(0.6 0.18 240);
+  --chart-1: oklch(0.6 0.18 240);
+  --chart-2: oklch(0.7 0.14 190);
+  --chart-3: oklch(0.65 0.16 260);
+  --chart-4: oklch(0.75 0.12 210);
+  --chart-5: oklch(0.55 0.16 230);
+}
+
+/* Forest Friends Theme - Green nature */
+[data-theme="forest"] {
+  --background: oklch(0.97 0.02 140);
+  --foreground: oklch(0.25 0.05 140);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.25 0.05 140);
+  --primary: oklch(0.6 0.18 145);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.92 0.06 100);
+  --secondary-foreground: oklch(0.35 0.06 140);
+  --muted: oklch(0.95 0.02 140);
+  --muted-foreground: oklch(0.5 0.03 140);
+  --accent: oklch(0.75 0.15 110);
+  --accent-foreground: oklch(0.25 0.06 110);
+  --success: oklch(0.7 0.16 145);
+  --success-foreground: oklch(1 0 0);
+  --border: oklch(0.9 0.03 140);
+  --input: oklch(0.95 0.02 140);
+  --ring: oklch(0.6 0.18 145);
+  --chart-1: oklch(0.6 0.18 145);
+  --chart-2: oklch(0.7 0.15 110);
+  --chart-3: oklch(0.55 0.14 160);
+  --chart-4: oklch(0.8 0.12 90);
+  --chart-5: oklch(0.65 0.14 130);
+}
+
+/* Candy Land Theme - Pink & purple sweet */
+[data-theme="candy"] {
+  --background: oklch(0.98 0.02 340);
+  --foreground: oklch(0.3 0.06 320);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.3 0.06 320);
+  --primary: oklch(0.65 0.2 340);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.92 0.08 300);
+  --secondary-foreground: oklch(0.35 0.08 320);
+  --muted: oklch(0.96 0.02 340);
+  --muted-foreground: oklch(0.5 0.04 320);
+  --accent: oklch(0.7 0.16 300);
+  --accent-foreground: oklch(0.25 0.06 300);
+  --success: oklch(0.7 0.16 160);
+  --success-foreground: oklch(1 0 0);
+  --border: oklch(0.92 0.03 340);
+  --input: oklch(0.96 0.02 340);
+  --ring: oklch(0.65 0.2 340);
+  --chart-1: oklch(0.65 0.2 340);
+  --chart-2: oklch(0.7 0.16 300);
+  --chart-3: oklch(0.6 0.18 280);
+  --chart-4: oklch(0.8 0.12 20);
+  --chart-5: oklch(0.75 0.14 320);
+}
+
+/* Space Explorer Theme - Dark cosmic */
+[data-theme="space"] {
+  --background: oklch(0.2 0.05 280);
+  --foreground: oklch(0.95 0.02 280);
+  --card: oklch(0.25 0.04 280);
+  --card-foreground: oklch(0.95 0.02 280);
+  --popover: oklch(0.25 0.04 280);
+  --popover-foreground: oklch(0.95 0.02 280);
+  --primary: oklch(0.65 0.2 280);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.35 0.06 280);
+  --secondary-foreground: oklch(0.9 0.02 280);
+  --muted: oklch(0.28 0.04 280);
+  --muted-foreground: oklch(0.7 0.02 280);
+  --accent: oklch(0.7 0.18 340);
+  --accent-foreground: oklch(0.2 0.06 340);
+  --success: oklch(0.65 0.18 170);
+  --success-foreground: oklch(1 0 0);
+  --border: oklch(0.35 0.04 280);
+  --input: oklch(0.28 0.04 280);
+  --ring: oklch(0.65 0.2 280);
+  --chart-1: oklch(0.65 0.2 280);
+  --chart-2: oklch(0.7 0.18 340);
+  --chart-3: oklch(0.6 0.16 200);
+  --chart-4: oklch(0.75 0.14 60);
+  --chart-5: oklch(0.55 0.2 300);
+}
+
+/* Sunset Safari Theme - Orange & warm */
+[data-theme="sunset"] {
+  --background: oklch(0.98 0.02 60);
+  --foreground: oklch(0.28 0.06 40);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.28 0.06 40);
+  --primary: oklch(0.7 0.18 45);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.92 0.06 60);
+  --secondary-foreground: oklch(0.35 0.06 40);
+  --muted: oklch(0.96 0.02 60);
+  --muted-foreground: oklch(0.5 0.04 40);
+  --accent: oklch(0.65 0.2 30);
+  --accent-foreground: oklch(1 0 0);
+  --success: oklch(0.7 0.16 145);
+  --success-foreground: oklch(1 0 0);
+  --border: oklch(0.92 0.03 60);
+  --input: oklch(0.96 0.02 60);
+  --ring: oklch(0.7 0.18 45);
+  --chart-1: oklch(0.7 0.18 45);
+  --chart-2: oklch(0.65 0.2 30);
+  --chart-3: oklch(0.75 0.14 70);
+  --chart-4: oklch(0.6 0.18 20);
+  --chart-5: oklch(0.8 0.12 50);
+}
+
+/* Arctic Chill Theme - Cool blue & white */
+[data-theme="arctic"] {
+  --background: oklch(0.98 0.01 210);
+  --foreground: oklch(0.25 0.04 210);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.25 0.04 210);
+  --primary: oklch(0.65 0.16 195);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.95 0.04 210);
+  --secondary-foreground: oklch(0.35 0.05 210);
+  --muted: oklch(0.96 0.02 210);
+  --muted-foreground: oklch(0.5 0.03 210);
+  --accent: oklch(0.6 0.16 230);
+  --accent-foreground: oklch(1 0 0);
+  --success: oklch(0.7 0.16 170);
+  --success-foreground: oklch(1 0 0);
+  --border: oklch(0.92 0.02 210);
+  --input: oklch(0.96 0.01 210);
+  --ring: oklch(0.65 0.16 195);
+  --chart-1: oklch(0.65 0.16 195);
+  --chart-2: oklch(0.6 0.16 230);
+  --chart-3: oklch(0.7 0.12 200);
+  --chart-4: oklch(0.55 0.14 220);
+  --chart-5: oklch(0.75 0.1 190);
+}
+
 .dark {
   --background: oklch(0.18 0.02 260);
   --foreground: oklch(0.95 0.01 90);

@@ -4,7 +4,8 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { BookOpen, GraduationCap, Sparkles, Star, Rocket, Brain } from "lucide-react"
+import { BookOpen, GraduationCap, Sparkles, Star, Rocket, Brain, Palette, Waves, TreePine, Candy, Sun, Snowflake, Check } from "lucide-react"
+import { useTheme, themes, type ThemeName } from "@/components/atutori/theme-provider"
 
 type GradeGroup = "primary-early" | "primary-mid" | "primary-upper" | "high-junior" | "high-senior"
 
@@ -87,9 +88,20 @@ const gradeGroups: {
   },
 ]
 
+const themeIcons: Record<string, React.ReactNode> = {
+  sparkles: <Sparkles className="h-6 w-6" />,
+  waves: <Waves className="h-6 w-6" />,
+  trees: <TreePine className="h-6 w-6" />,
+  candy: <Candy className="h-6 w-6" />,
+  rocket: <Rocket className="h-6 w-6" />,
+  sun: <Sun className="h-6 w-6" />,
+  snowflake: <Snowflake className="h-6 w-6" />,
+}
+
 export function OnboardingClient() {
   const router = useRouter()
-  const [step, setStep] = useState<"welcome" | "group" | "grade">("welcome")
+  const { theme, setTheme } = useTheme()
+  const [step, setStep] = useState<"welcome" | "group" | "grade" | "theme">("welcome")
   const [selectedGroup, setSelectedGroup] = useState<GradeGroup | null>(null)
   const [selectedGrade, setSelectedGrade] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -101,8 +113,16 @@ export function OnboardingClient() {
     setStep("grade")
   }
 
-  const handleSelectGrade = async (grade: number) => {
+  const handleSelectGrade = (grade: number) => {
     setSelectedGrade(grade)
+    setStep("theme")
+  }
+
+  const handleSelectTheme = (themeName: ThemeName) => {
+    setTheme(themeName)
+  }
+
+  const handleFinishOnboarding = async () => {
     setIsLoading(true)
 
     try {
@@ -111,7 +131,7 @@ export function OnboardingClient() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          grade,
+          grade: selectedGrade,
           gradeGroup: selectedGroup,
         }),
       })
@@ -221,13 +241,8 @@ export function OnboardingClient() {
                     selectedGrade === gradeOption.grade ? "" : "hover:bg-accent"
                   }`}
                   onClick={() => handleSelectGrade(gradeOption.grade)}
-                  disabled={isLoading}
                 >
-                  {isLoading && selectedGrade === gradeOption.grade ? (
-                    <span className="animate-pulse">Saving...</span>
-                  ) : (
-                    gradeOption.label
-                  )}
+                  {gradeOption.label}
                 </Button>
               ))}
             </div>
@@ -236,6 +251,83 @@ export function OnboardingClient() {
               <Button variant="ghost" onClick={() => setStep("group")}>
                 Go Back
               </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Theme Selection */}
+        {step === "theme" && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-right duration-500">
+            <div className="text-center">
+              <div className="inline-flex p-4 rounded-2xl bg-primary/10 text-primary mb-4">
+                <Palette className="h-10 w-10" />
+              </div>
+              <h2 className="text-3xl font-bold text-foreground mb-2">
+                Pick Your Theme!
+              </h2>
+              <p className="text-muted-foreground">
+                Choose your favorite colors for your learning adventure
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-3xl mx-auto">
+              {themes.map((t) => (
+                <Card
+                  key={t.name}
+                  className={`p-4 cursor-pointer transition-all duration-200 hover:scale-105 ${
+                    theme === t.name
+                      ? "ring-2 ring-primary ring-offset-2 shadow-lg"
+                      : "hover:shadow-md"
+                  }`}
+                  onClick={() => handleSelectTheme(t.name)}
+                >
+                  <div className="flex flex-col items-center gap-3">
+                    <div
+                      className="p-3 rounded-xl"
+                      style={{ backgroundColor: t.preview[1] }}
+                    >
+                      <div style={{ color: t.preview[0] }}>
+                        {themeIcons[t.icon]}
+                      </div>
+                    </div>
+                    <p className="font-semibold text-sm text-center">{t.label}</p>
+                    <div className="flex gap-1">
+                      {t.preview.map((color, i) => (
+                        <div
+                          key={i}
+                          className="w-5 h-5 rounded-full border border-gray-200"
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                    {theme === t.name && (
+                      <div className="absolute top-2 right-2">
+                        <Check className="h-4 w-4 text-primary" />
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            <div className="text-center space-y-4">
+              <Button
+                size="lg"
+                className="text-lg px-8 py-6 rounded-2xl"
+                onClick={handleFinishOnboarding}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="animate-pulse">Starting your journey...</span>
+                ) : (
+                  "Start Learning!"
+                )}
+              </Button>
+              <div>
+                <Button variant="ghost" onClick={() => setStep("grade")}>
+                  Go Back
+                </Button>
+              </div>
             </div>
           </div>
         )}
