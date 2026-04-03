@@ -75,3 +75,75 @@ model Verification {
 
   @@map("verification")
 }
+
+// Media uploaded by tutors/parents for students
+model Media {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  url         String   // Video URL (YouTube, Vimeo, etc.)
+  thumbnailUrl String?
+  duration    Int?     // Duration in seconds
+  gradeGroup  String   // Target grade group
+  subjectId   String?  // Optional subject association
+  uploadedById String  // Tutor/Parent who uploaded
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  assignments MediaAssignment[]
+
+  @@map("media")
+}
+
+// Many-to-many: Media assigned to students
+model MediaAssignment {
+  id         String   @id @default(cuid())
+  mediaId    String
+  media      Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  studentId  String   // User ID of student
+  assignedById String // Tutor/Parent who assigned
+  watched    Boolean  @default(false)
+  watchedAt  DateTime?
+  quizCompleted Boolean @default(false)
+  quizScore  Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([mediaId, studentId])
+  @@map("media_assignment")
+}
+
+// Subscription packages
+model Package {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Int      // Price in cents
+  interval    String   // "monthly", "yearly", "lifetime"
+  features    String[] // List of features
+  maxStudents Int      @default(1) // Max students per subscription
+  isPopular   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@map("package")
+}
+
+// User subscriptions
+model Subscription {
+  id            String   @id @default(cuid())
+  userId        String   
+  packageId     String
+  package       Package  @relation(fields: [packageId], references: [id])
+  status        String   // "active", "cancelled", "expired", "trialing"
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelledAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("subscription")
+}
