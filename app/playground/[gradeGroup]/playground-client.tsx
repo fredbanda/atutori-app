@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { authClient } from "@/lib/auth-client"
+import { MediaWindow } from "@/components/atutori/media-window"
 import {
   Calculator,
   BookOpen,
@@ -180,6 +181,10 @@ export function PlaygroundClient({
     router.push(`/playground/${gradeGroup}/lesson/${subjectId}`)
   }
 
+  const handleSelectVideo = (media: { id: string }) => {
+    router.push(`/playground/${gradeGroup}/video/${media.id}`)
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -280,12 +285,12 @@ export function PlaygroundClient({
           </div>
         </Card>
 
-        {/* Subjects Grid */}
-        <div className="mb-6">
-          <h3 className="text-xl font-bold text-foreground mb-4">Your Subjects</h3>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Two Column Layout: Subjects + Media */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Subjects Column */}
+          <div className="lg:col-span-2">
+            <h3 className="text-xl font-bold text-foreground mb-4">Your Subjects</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {config.subjects.map((subject) => (
             <Card
               key={subject.id}
@@ -317,6 +322,14 @@ export function PlaygroundClient({
               </div>
             </Card>
           ))}
+            </div>
+          </div>
+
+          {/* Media Window Column */}
+          <div className="lg:col-span-1">
+            <h3 className="text-xl font-bold text-foreground mb-4">My Videos</h3>
+            <MediaWindow onSelectVideo={handleSelectVideo} />
+          </div>
         </div>
 
         {/* Daily Goal */}
