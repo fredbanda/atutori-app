@@ -21,6 +21,14 @@ export const auth = betterAuth({
   },
   user: {
     additionalFields: {
+      grade: {
+        type: "number",
+        required: false,
+      },
+      gradeGroup: {
+        type: "string",
+        required: false,
+      },
       level: {
         type: "number",
         required: false,
@@ -39,6 +47,11 @@ export const auth = betterAuth({
       lastActiveAt: {
         type: "date",
         required: false,
+      },
+      onboarded: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
       },
     },
   },

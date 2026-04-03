@@ -18,10 +18,13 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Atutori specific fields
+  grade         Int?      // 1-12 for grade levels
+  gradeGroup    String?   // "primary-early", "primary-mid", "primary-upper", "high-junior", "high-senior"
   level         Int       @default(1)
   xp            Int       @default(0)
   streakDays    Int       @default(0)
   lastActiveAt  DateTime?
+  onboarded     Boolean   @default(false)
 
   sessions      Session[]
   accounts      Account[]
