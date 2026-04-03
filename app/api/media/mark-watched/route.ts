@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { headers } from "next/headers"
 import { auth } from "@/lib/auth"
-import { redis, cacheKeys } from "@/lib/redis"
+import { redis, CACHE_KEYS } from "@/lib/redis"
 import { neon } from "@neondatabase/serverless"
 
 const sql = neon(process.env.DATABASE_URL!)
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     `
 
     // Invalidate cache
-    await redis.del(cacheKeys.userMedia(userId))
+    await redis.del(CACHE_KEYS.userMedia(userId))
 
     return NextResponse.json({ success: true })
   } catch (error) {

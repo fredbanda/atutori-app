@@ -32,6 +32,7 @@ export const CACHE_KEYS = {
     `user:${userId}:progress:${subjectId}`,
   subscription: (userId: string) => `user:${userId}:subscription`,
   packages: () => "packages:all",
+  videoQuiz: (mediaId: string) => `quiz:${mediaId}`,
 } as const;
 
 // Cache durations in seconds
@@ -41,6 +42,7 @@ export const CACHE_TTL = {
   progress: 60 * 2, // 2 minutes
   subscription: 60 * 15, // 15 minutes
   packages: 60 * 60, // 1 hour
+  long: 60 * 60 * 24, // 24 hours
 } as const;
 
 // Generic cache helper

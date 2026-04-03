@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { headers } from "next/headers"
 import { auth } from "@/lib/auth"
-import { redis, cacheKeys, CACHE_TTL } from "@/lib/redis"
+import { redis, CACHE_KEYS, CACHE_TTL } from "@/lib/redis"
 
 // Placeholder for AI-generated quiz questions
 // In production, this would integrate with an AI service to analyze the video
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Try to get cached quiz first
-    const cacheKey = cacheKeys.videoQuiz(mediaId)
+    const cacheKey = CACHE_KEYS.videoQuiz(mediaId)
     const cached = await redis.get<QuizQuestion[]>(cacheKey)
     if (cached) {
       return NextResponse.json({ questions: cached, fromCache: true })
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     ]
 
     // Cache quiz for longer since it won't change
-    await redis.set(cacheKey, questions, { ex: CACHE_TTL.LONG })
+    await redis.set(cacheKey, questions, { ex: CACHE_TTL.long })
 
     return NextResponse.json({ 
       questions, 
