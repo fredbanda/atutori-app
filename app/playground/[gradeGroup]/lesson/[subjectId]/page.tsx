@@ -379,7 +379,7 @@ const lessonContent: Record<string, Record<string, {
       lessons: [
         {
           type: "content",
-          title: "Newton&apos;s Second Law",
+          title: "Newton's Second Law",
           content: "Force equals mass times acceleration (F = ma). This fundamental law describes how objects move.",
           example: "A 10 kg object accelerating at 2 m/s² experiences a force of 20 N.",
         },
