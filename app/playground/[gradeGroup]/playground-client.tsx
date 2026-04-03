@@ -30,6 +30,7 @@ import {
   Rocket,
   GraduationCap,
   Brain,
+  Puzzle,
 } from "lucide-react"
 
 interface User {
@@ -82,6 +83,7 @@ const gradeGroupConfig: Record<string, {
       { id: "music", name: "Music Play", icon: <Music className="h-6 w-6" />, color: "text-purple-600", bgColor: "bg-purple-100", progress: 25, lessonsCompleted: 5, totalLessons: 20 },
       { id: "science", name: "Discovery Zone", icon: <FlaskConical className="h-6 w-6" />, color: "text-teal-600", bgColor: "bg-teal-100", progress: 35, lessonsCompleted: 7, totalLessons: 20 },
       { id: "world", name: "Our World", icon: <Globe className="h-6 w-6" />, color: "text-indigo-600", bgColor: "bg-indigo-100", progress: 20, lessonsCompleted: 4, totalLessons: 20 },
+      { id: "puzzles", name: "Think & Solve", icon: <Puzzle className="h-6 w-6" />, color: "text-orange-600", bgColor: "bg-orange-100", progress: 15, lessonsCompleted: 3, totalLessons: 20 },
     ],
   },
   "primary-mid": {
@@ -100,6 +102,7 @@ const gradeGroupConfig: Record<string, {
       { id: "history", name: "History", icon: <History className="h-6 w-6" />, color: "text-amber-600", bgColor: "bg-amber-100", progress: 35, lessonsCompleted: 7, totalLessons: 20 },
       { id: "geography", name: "Geography", icon: <Globe className="h-6 w-6" />, color: "text-indigo-600", bgColor: "bg-indigo-100", progress: 30, lessonsCompleted: 6, totalLessons: 20 },
       { id: "art", name: "Creative Arts", icon: <Palette className="h-6 w-6" />, color: "text-pink-600", bgColor: "bg-pink-100", progress: 45, lessonsCompleted: 9, totalLessons: 20 },
+      { id: "puzzles", name: "Logic Puzzles", icon: <Puzzle className="h-6 w-6" />, color: "text-orange-600", bgColor: "bg-orange-100", progress: 25, lessonsCompleted: 5, totalLessons: 20 },
     ],
   },
   "primary-upper": {
@@ -118,6 +121,7 @@ const gradeGroupConfig: Record<string, {
       { id: "coding", name: "Intro to Coding", icon: <Code className="h-6 w-6" />, color: "text-orange-600", bgColor: "bg-orange-100", progress: 40, lessonsCompleted: 8, totalLessons: 20 },
       { id: "history", name: "World History", icon: <History className="h-6 w-6" />, color: "text-amber-600", bgColor: "bg-amber-100", progress: 35, lessonsCompleted: 7, totalLessons: 20 },
       { id: "languages", name: "Foreign Language", icon: <Languages className="h-6 w-6" />, color: "text-rose-600", bgColor: "bg-rose-100", progress: 25, lessonsCompleted: 5, totalLessons: 20 },
+      { id: "puzzles", name: "Logic & Algorithms", icon: <Puzzle className="h-6 w-6" />, color: "text-orange-600", bgColor: "bg-orange-100", progress: 30, lessonsCompleted: 6, totalLessons: 20 },
     ],
   },
   "high-junior": {
@@ -136,6 +140,7 @@ const gradeGroupConfig: Record<string, {
       { id: "chemistry", name: "Chemistry", icon: <Atom className="h-6 w-6" />, color: "text-purple-600", bgColor: "bg-purple-100", progress: 45, lessonsCompleted: 9, totalLessons: 20 },
       { id: "literature", name: "Literature", icon: <BookOpen className="h-6 w-6" />, color: "text-amber-600", bgColor: "bg-amber-100", progress: 50, lessonsCompleted: 10, totalLessons: 20 },
       { id: "programming", name: "Programming", icon: <Code className="h-6 w-6" />, color: "text-orange-600", bgColor: "bg-orange-100", progress: 35, lessonsCompleted: 7, totalLessons: 20 },
+      { id: "puzzles", name: "Computational Thinking", icon: <Puzzle className="h-6 w-6" />, color: "text-cyan-600", bgColor: "bg-cyan-100", progress: 40, lessonsCompleted: 8, totalLessons: 20 },
     ],
   },
   "high-senior": {
@@ -154,6 +159,7 @@ const gradeGroupConfig: Record<string, {
       { id: "cs", name: "Computer Science", icon: <Code className="h-6 w-6" />, color: "text-orange-600", bgColor: "bg-orange-100", progress: 65, lessonsCompleted: 13, totalLessons: 20 },
       { id: "economics", name: "Economics", icon: <Lightbulb className="h-6 w-6" />, color: "text-green-600", bgColor: "bg-green-100", progress: 40, lessonsCompleted: 8, totalLessons: 20 },
       { id: "writing", name: "Academic Writing", icon: <PenTool className="h-6 w-6" />, color: "text-rose-600", bgColor: "bg-rose-100", progress: 50, lessonsCompleted: 10, totalLessons: 20 },
+      { id: "puzzles", name: "Advanced Logic", icon: <Puzzle className="h-6 w-6" />, color: "text-cyan-600", bgColor: "bg-cyan-100", progress: 45, lessonsCompleted: 9, totalLessons: 20 },
     ],
   },
 }
