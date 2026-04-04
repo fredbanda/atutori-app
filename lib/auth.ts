@@ -87,7 +87,7 @@ export const auth = (() => {
           : []),
       ],
       advanced: {
-        crossSubdomainCookies: { enabled: false },
+        crossSubDomainCookies: { enabled: false },
       },
       plugins: [nextCookies()],
     });
