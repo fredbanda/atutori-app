@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +17,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { BookOpen, Eye, EyeOff, Sparkles } from "lucide-react";
 
 export default function SignInPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -31,54 +29,29 @@ export default function SignInPage() {
     setIsLoading(true);
 
     try {
-      console.log("Starting sign-in process...");
-      const result = await signIn.email({
-        email,
-        password,
-      });
-
-      console.log("Sign-in result:", result);
+      const result = await signIn.email({ email, password });
 
       if (result.error) {
         setError(result.error.message || "Failed to sign in");
       } else {
-        console.log("Sign-in successful, waiting for session...");
-        // Wait a bit for session to be fully established
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        console.log("Fetching user data...");
         // Check onboarding status before redirecting
         try {
-          const res = await fetch("/api/user/me", {
-            // Ensure fresh request, not cached
+          const res = await fetch(`/api/user/me?t=${Date.now()}`, {
             cache: "no-store",
-            headers: {
-              "Cache-Control": "no-cache",
-            },
+            headers: { "Cache-Control": "no-cache, no-store" },
           });
-          console.log("User API response status:", res.status);
 
           if (res.ok) {
             const data = await res.json();
-            console.log("User data received:", data);
-
-            if (data.onboarded && data.gradeGroup) {
-              console.log(
-                "User onboarded, redirecting to playground:",
-                data.gradeGroup
-              );
-              router.replace(`/playground/${data.gradeGroup}`);
-            } else {
-              console.log("User not onboarded, redirecting to onboarding");
-              router.replace("/onboarding");
-            }
+            const dest = data.onboarded && data.gradeGroup
+              ? `/playground/${data.gradeGroup}`
+              : "/onboarding";
+            window.location.href = dest;
           } else {
-            console.log("User API failed, redirecting to onboarding");
-            router.replace("/onboarding");
+            window.location.href = "/onboarding";
           }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-          router.replace("/onboarding");
+        } catch {
+          window.location.href = "/onboarding";
         }
       }
     } catch {
