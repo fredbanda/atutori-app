@@ -39,7 +39,22 @@ export default function SignInPage() {
       if (result.error) {
         setError(result.error.message || "Failed to sign in");
       } else {
-        router.push("/dashboard");
+        // Check onboarding status before redirecting
+        try {
+          const res = await fetch("/api/user/me");
+          if (res.ok) {
+            const data = await res.json();
+            if (data.onboarded && data.gradeGroup) {
+              router.push(`/playground/${data.gradeGroup}`);
+            } else {
+              router.push("/onboarding");
+            }
+          } else {
+            router.push("/onboarding");
+          }
+        } catch {
+          router.push("/onboarding");
+        }
         router.refresh();
       }
     } catch {
