@@ -36,8 +36,7 @@ export const auth = (() => {
         expiresIn: 60 * 60 * 24 * 7, // 7 days
         updateAge: 60 * 60 * 24, // 1 day
         cookieCache: {
-          enabled: true,
-          maxAge: 5 * 60, // 5 minutes
+          enabled: false,
         },
       },
       user: {
@@ -76,6 +75,10 @@ export const auth = (() => {
           },
         },
       },
+      trustedOrigins: [
+        "https://eatutori.vercel.app",
+        ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
+      ],
       plugins: [nextCookies()],
     });
   } catch (err) {
