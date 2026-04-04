@@ -29,10 +29,17 @@ export default function SignInPage() {
     setIsLoading(true);
 
     try {
-      const result = await signIn.email({ email, password });
+      const res = await fetch("/api/auth/sign-in/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        credentials: "include",
+      });
 
-      if (result.error) {
-        setError(result.error.message || "Failed to sign in");
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        setError(data.error?.message || "Failed to sign in");
       } else {
         window.location.href = "/api/auth/redirect";
       }

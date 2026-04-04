@@ -43,7 +43,10 @@ export const POST = async (req: Request) => {
   }
 
   try {
-    return await handler.POST(req as any);
+    const res = await handler.POST(req as any);
+    console.log("[auth POST] status:", res.status);
+    console.log("[auth POST] set-cookie:", res.headers.get("set-cookie"));
+    return res;
   } catch (err) {
     console.error("Error in auth POST:", err);
     throw err;

@@ -10,7 +10,11 @@ const sql = neon(process.env.DATABASE_URL!);
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
 
+  console.log("[auth/redirect] session userId:", session?.user?.id ?? "none");
+  console.log("[auth/redirect] session user:", JSON.stringify(session?.user ?? null));
+
   if (!session?.user?.id) {
+    console.log("[auth/redirect] no session → /sign-in");
     redirect("/sign-in");
   }
 
@@ -18,9 +22,13 @@ export async function GET() {
     SELECT onboarded, "gradeGroup" FROM "user" WHERE id = ${session.user.id}
   `;
 
+  console.log("[auth/redirect] db user:", JSON.stringify(user ?? null));
+
   if (user?.onboarded && user?.gradeGroup) {
+    console.log("[auth/redirect] onboarded → /playground/" + user.gradeGroup);
     redirect(`/playground/${user.gradeGroup}`);
   }
 
+  console.log("[auth/redirect] not onboarded → /onboarding");
   redirect("/onboarding");
 }
