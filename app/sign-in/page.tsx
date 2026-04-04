@@ -31,17 +31,22 @@ export default function SignInPage() {
     setIsLoading(true);
 
     try {
+      console.log("Starting sign-in process...");
       const result = await signIn.email({
         email,
         password,
       });
 
+      console.log("Sign-in result:", result);
+
       if (result.error) {
         setError(result.error.message || "Failed to sign in");
       } else {
+        console.log("Sign-in successful, waiting for session...");
         // Wait a bit for session to be fully established
         await new Promise((resolve) => setTimeout(resolve, 100));
 
+        console.log("Fetching user data...");
         // Check onboarding status before redirecting
         try {
           const res = await fetch("/api/user/me", {
@@ -51,14 +56,24 @@ export default function SignInPage() {
               "Cache-Control": "no-cache",
             },
           });
+          console.log("User API response status:", res.status);
+
           if (res.ok) {
             const data = await res.json();
+            console.log("User data received:", data);
+
             if (data.onboarded && data.gradeGroup) {
+              console.log(
+                "User onboarded, redirecting to playground:",
+                data.gradeGroup
+              );
               router.replace(`/playground/${data.gradeGroup}`);
             } else {
+              console.log("User not onboarded, redirecting to onboarding");
               router.replace("/onboarding");
             }
           } else {
+            console.log("User API failed, redirecting to onboarding");
             router.replace("/onboarding");
           }
         } catch (error) {

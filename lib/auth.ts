@@ -22,6 +22,7 @@ if (!BETTER_AUTH_SECRET || typeof BETTER_AUTH_SECRET !== "string") {
 export const auth = (() => {
   try {
     return betterAuth({
+      baseURL: process.env.BETTER_AUTH_URL || "https://eatutori.vercel.app",
       database: prismaAdapter(prisma, {
         provider: "postgresql",
       }),
@@ -77,7 +78,8 @@ export const auth = (() => {
       },
       trustedOrigins: [
         "https://eatutori.vercel.app",
-        ...(process.env.BETTER_AUTH_URL && !process.env.BETTER_AUTH_URL.includes("localhost")
+        ...(process.env.BETTER_AUTH_URL &&
+        !process.env.BETTER_AUTH_URL.includes("localhost")
           ? [process.env.BETTER_AUTH_URL]
           : []),
       ],

@@ -36,7 +36,7 @@ const lessonContent: Record<string, Record<string, {
         {
           type: "content",
           title: "Counting to 10",
-          content: "Let&apos;s learn to count! Numbers help us know how many things we have.",
+          content: "Let's learn to count! Numbers help us know how many things we have.",
           example: "1, 2, 3, 4, 5, 6, 7, 8, 9, 10",
         },
         {
@@ -67,7 +67,7 @@ const lessonContent: Record<string, Record<string, {
         {
           type: "content",
           title: "The Alphabet",
-          content: "Letters make words! Let&apos;s start with the first letters: A, B, C, D, E",
+          content: "Letters make words! Let's start with the first letters: A, B, C, D, E",
           example: "A is for Apple 🍎, B is for Ball ⚽, C is for Cat 🐱",
         },
         {
