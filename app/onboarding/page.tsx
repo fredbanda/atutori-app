@@ -1,5 +1,29 @@
-import { OnboardingClient } from "./onboarding-client"
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import { neon } from "@neondatabase/serverless";
+import { OnboardingClient } from "./onboarding-client";
 
-export default function OnboardingPage() {
-  return <OnboardingClient />
+const sql = neon(process.env.DATABASE_URL!);
+
+export default async function OnboardingPage() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user) {
+    redirect("/sign-in");
+  }
+
+  // Check if user is already onboarded
+  const [user] = await sql`
+    SELECT onboarded, "gradeGroup" FROM "user" WHERE id = ${session.user.id}
+  `;
+
+  if (user?.onboarded && user?.gradeGroup) {
+    redirect(`/playground/${user.gradeGroup}`);
+  }
+
+  return <OnboardingClient />;
 }
+

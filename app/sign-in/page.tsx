@@ -39,23 +39,32 @@ export default function SignInPage() {
       if (result.error) {
         setError(result.error.message || "Failed to sign in");
       } else {
+        // Wait a bit for session to be fully established
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         // Check onboarding status before redirecting
         try {
-          const res = await fetch("/api/user/me");
+          const res = await fetch("/api/user/me", {
+            // Ensure fresh request, not cached
+            cache: "no-store",
+            headers: {
+              "Cache-Control": "no-cache",
+            },
+          });
           if (res.ok) {
             const data = await res.json();
             if (data.onboarded && data.gradeGroup) {
-              router.push(`/playground/${data.gradeGroup}`);
+              router.replace(`/playground/${data.gradeGroup}`);
             } else {
-              router.push("/onboarding");
+              router.replace("/onboarding");
             }
           } else {
-            router.push("/onboarding");
+            router.replace("/onboarding");
           }
-        } catch {
-          router.push("/onboarding");
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          router.replace("/onboarding");
         }
-        router.refresh();
       }
     } catch {
       setError("Something went wrong. Please try again.");

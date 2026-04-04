@@ -140,14 +140,21 @@ export function OnboardingClient() {
       return;
     }
     // If already onboarded, skip to playground
-    fetch("/api/user/me")
+    fetch("/api/user/me", {
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache",
+      },
+    })
       .then((r) => r.json())
       .then((data) => {
         if (data.onboarded && data.gradeGroup) {
           router.replace(`/playground/${data.gradeGroup}`);
         }
       })
-      .catch(() => {});
+      .catch((error) => {
+        console.error("Error fetching user onboarding status:", error);
+      });
   }, [session, isPending, router]);
 
   const currentGroup = gradeGroups.find((g) => g.id === selectedGroup);
