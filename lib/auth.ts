@@ -77,8 +77,17 @@ export const auth = (() => {
       },
       trustedOrigins: [
         "https://eatutori.vercel.app",
-        ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
+        ...(process.env.BETTER_AUTH_URL && !process.env.BETTER_AUTH_URL.includes("localhost")
+          ? [process.env.BETTER_AUTH_URL]
+          : []),
       ],
+      advanced: {
+        crossSubdomainCookies: { enabled: false },
+        defaultCookieAttributes: {
+          secure: true,
+          sameSite: "lax",
+        },
+      },
       plugins: [nextCookies()],
     });
   } catch (err) {
