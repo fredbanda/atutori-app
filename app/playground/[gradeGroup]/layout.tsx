@@ -27,7 +27,7 @@ export default async function PlaygroundLayout({
   const [user] = await sql`
     SELECT id, name, email, grade, "gradeGroup", level, xp, "streakDays", onboarded 
     FROM "user" WHERE id = ${session.user.id}
-  `;
+  ` as { id: string; name: string; email: string; grade: number; gradeGroup: string; level: number; xp: number; streakDays: number; onboarded: boolean }[];
 
   if (!user?.onboarded) {
     redirect("/onboarding");
