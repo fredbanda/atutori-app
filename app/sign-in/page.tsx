@@ -34,25 +34,7 @@ export default function SignInPage() {
       if (result.error) {
         setError(result.error.message || "Failed to sign in");
       } else {
-        // Check onboarding status before redirecting
-        try {
-          const res = await fetch(`/api/user/me?t=${Date.now()}`, {
-            cache: "no-store",
-            headers: { "Cache-Control": "no-cache, no-store" },
-          });
-
-          if (res.ok) {
-            const data = await res.json();
-            const dest = data.onboarded && data.gradeGroup
-              ? `/playground/${data.gradeGroup}`
-              : "/onboarding";
-            window.location.href = dest;
-          } else {
-            window.location.href = "/onboarding";
-          }
-        } catch {
-          window.location.href = "/onboarding";
-        }
+        window.location.href = "/api/auth/redirect";
       }
     } catch {
       setError("Something went wrong. Please try again.");

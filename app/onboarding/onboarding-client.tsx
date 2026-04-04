@@ -195,8 +195,8 @@ export function OnboardingClient() {
         }),
       });
 
-      // Navigate to the playground
-      router.push(`/playground/${selectedGroup}`);
+      // Hard navigate to bust any cached session state
+      window.location.href = `/playground/${selectedGroup}`;
     } catch (error) {
       console.error("Failed to save grade:", error);
       setIsLoading(false);
