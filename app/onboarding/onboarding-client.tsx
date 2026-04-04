@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -123,6 +124,7 @@ const themeIcons: Record<string, React.ReactNode> = {
 
 export function OnboardingClient() {
   const router = useRouter();
+  const { data: session, isPending } = useSession();
   const { theme, setTheme } = useTheme();
   const [step, setStep] = useState<"welcome" | "group" | "grade" | "theme">(
     "welcome"
@@ -131,7 +133,32 @@ export function OnboardingClient() {
   const [selectedGrade, setSelectedGrade] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    if (isPending) return;
+    if (!session?.user) {
+      router.replace("/sign-in");
+      return;
+    }
+    // If already onboarded, skip to playground
+    fetch("/api/user/me")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.onboarded && data.gradeGroup) {
+          router.replace(`/playground/${data.gradeGroup}`);
+        }
+      })
+      .catch(() => {});
+  }, [session, isPending, router]);
+
   const currentGroup = gradeGroups.find((g) => g.id === selectedGroup);
+
+  if (isPending || !session?.user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   const handleSelectGroup = (groupId: GradeGroup) => {
     setSelectedGroup(groupId);
