@@ -88,10 +88,6 @@ export const auth = (() => {
       ],
       advanced: {
         crossSubdomainCookies: { enabled: false },
-        defaultCookieAttributes: {
-          secure: true,
-          sameSite: "lax",
-        },
       },
       plugins: [nextCookies()],
     });
