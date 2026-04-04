@@ -14,7 +14,6 @@ export const metadata: Metadata = {
   title: "eatutori - AI Learning for Kids",
   description:
     "A fun, gamified AI learning platform for primary school students aged 7-12",
-  generator: "v0.app",
   icons: {
     icon: [
       {

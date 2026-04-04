@@ -1,0 +1,15 @@
+DATABASE_URL=postgresql://neondb_owner:npg_74RYKXbotnUy@ep-blue-band-ammmq68g-pooler.c-5.us-east-1.aws.neon.tech/eatutori_db?sslmode=require
+
+DATABASE_URL_UNPOOLED=postgresql://neondb_owner:npg_74RYKXbotnUy@ep-blue-band-ammmq68g.c-5.us-east-1.aws.neon.tech/eatutori_db?sslmode=require&channel_binding=require
+
+KV_REST_API_URL=https://vital-hawk-67999.upstash.io
+KV_URL=rediss://default:gQAAAAAAAQmfAAIncDFhZWQwNTcwODk1ZTA0Yjc3YTc5NDcyYmE1MWNiZWI1N3AxNjc5OTk@vital-hawk-67999.upstash.io:6379
+REDIS_URL=rediss://default:gQAAAAAAAQmfAAIncDFhZWQwNTcwODk1ZTA0Yjc3YTc5NDcyYmE1MWNiZWI1N3AxNjc5OTk@vital-hawk-67999.upstash.io:6379
+KV_REST_API_READ_ONLY_TOKEN=ggAAAAAAAQmfAAIgcDEVbaWCWVtY8V6b-9jbXGnS7fKRux49WRHoP0qbxF9RWw
+KV_REST_API_TOKEN=gQAAAAAAAQmfAAIncDFhZWQwNTcwODk1ZTA0Yjc3YTc5NDcyYmE1MWNiZWI1N3AxNjc5OTk
+
+BETTER_AUTH_SECRET=SFP75Lk3nYsPMauFZeRWBTtRjn9uu015
+
+BETTER_AUTH_URL=http://localhost:3000
+
+NEXT_PUBLIC_APP_URL=http://localhost:3000

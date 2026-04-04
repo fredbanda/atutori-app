@@ -179,7 +179,7 @@ export function OnboardingClient() {
               <Brain className="h-12 w-12 text-primary" />
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-foreground">
-              Welcome to eatutori!
+              Welcome to Eatutori!
             </h1>
             <p className="text-xl text-muted-foreground max-w-md mx-auto">
               Your personal AI tutor is ready to help you learn. Let&apos;s set
