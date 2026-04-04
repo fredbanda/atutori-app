@@ -5,6 +5,8 @@ import { neon } from "@neondatabase/serverless";
 import { SubjectNav } from "@/components/eatutori/subject-nav";
 import { PlaygroundHeader } from "@/components/eatutori/playground-header";
 
+export const dynamic = "force-dynamic";
+
 const sql = neon(process.env.DATABASE_URL!);
 
 export default async function PlaygroundLayout({

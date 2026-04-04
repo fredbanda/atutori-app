@@ -3,16 +3,15 @@
 import { createAuthClient } from "better-auth/react";
 
 const getBaseURL = () => {
-  // In production, use the environment variable or the current origin
-  if (process.env.NEXT_PUBLIC_APP_URL) {
+  if (
+    process.env.NEXT_PUBLIC_APP_URL &&
+    !process.env.NEXT_PUBLIC_APP_URL.includes("localhost")
+  ) {
     return process.env.NEXT_PUBLIC_APP_URL;
   }
-
   if (typeof window !== "undefined") {
     return window.location.origin;
   }
-
-  // Default fallback
   return "https://eatutori.vercel.app";
 };
 

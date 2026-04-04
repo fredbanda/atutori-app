@@ -4,6 +4,8 @@ import { redirect } from "next/navigation"
 import { neon } from "@neondatabase/serverless"
 import { PlaygroundClient } from "./playground-client"
 
+export const dynamic = "force-dynamic"
+
 const sql = neon(process.env.DATABASE_URL!)
 
 export default async function PlaygroundPage({
