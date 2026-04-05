@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, Sparkles, Star, Trophy, Zap, Users } from "lucide-react";
+import Image from "next/image";
+import Logo from "@/public/logo-eatutori.png"
 
 export default function LandingPage() {
   return (
@@ -11,10 +13,9 @@ export default function LandingPage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="relative">
-              <BookOpen className="h-8 w-8 text-primary" strokeWidth={1.5} />
-              <Sparkles className="h-4 w-4 absolute -top-1 -right-1 text-accent-foreground" />
+              <Image src={Logo} alt="Eatutori Logo" width={60} height={40} />
             </div>
-            <span className="text-xl font-bold text-foreground">eatutori</span>
+            <span className="text-3xl font-bold text-4xlforeground mb-[-0.5rem]">Eatutori</span>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" asChild>
@@ -39,7 +40,7 @@ export default function LandingPage() {
             <span className="text-primary"> AI Magic</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground text-pretty">
-            eatutori transforms education into an exciting adventure. With
+            Eatutori transforms education into an exciting adventure. With
             personalized AI tutoring, gamified lessons, and engaging quizzes,
             your child will love learning!
           </p>

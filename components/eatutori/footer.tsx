@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { BookOpen, Sparkles, Mail, Phone, MapPin } from "lucide-react";
+import Image from "next/image";
+import Logo from "@/public/logo-eatutori.png"
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
@@ -12,10 +14,9 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <div className="relative">
-                <BookOpen className="h-8 w-8 text-primary" strokeWidth={1.5} />
-                <Sparkles className="h-4 w-4 absolute -top-1 -right-1 text-accent-foreground" />
+                <Image src={Logo} alt="Eatutori Logo" width={60} height={40} />
               </div>
-              <span className="text-xl font-bold text-foreground">atutori</span>
+              <span className="text-3xl font-bold text-foreground">Eatutori</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Making learning an adventure, one lesson at a time. AI-powered
