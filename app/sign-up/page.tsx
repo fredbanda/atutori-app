@@ -16,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { BookOpen, Sparkles, Star, Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
+import Logo from "@/public/logo-eatutori.png"
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -71,8 +73,7 @@ export default function SignUpPage() {
         <div className="flex flex-col items-center gap-2">
           <div className="flex items-center gap-2 text-primary">
             <div className="relative">
-              <BookOpen className="h-12 w-12" strokeWidth={1.5} />
-              <Sparkles className="h-5 w-5 absolute -top-1 -right-1 text-accent-foreground" />
+   <Image src={Logo} alt="Eatutori Logo" width={100} height={100} className="mb-[-0.5rem]" />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-foreground">Eatutori</h1>

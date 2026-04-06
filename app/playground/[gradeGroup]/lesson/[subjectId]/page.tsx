@@ -33,6 +33,32 @@ const gradeGroupToGrade = {
   "high-senior": [11, 12],
 };
 
+// Subject ID mapping for different grades
+const subjectMapping = {
+  // Grade 1 subjects
+  1: {
+    "1": "counting",
+    "2": "number-writing",
+    "3": "addition-basic",
+    "4": "subtraction-basic",
+    "5": "shapes-patterns",
+    "6": "measurement-comparison",
+    "7": "time-sequencing",
+    "8": "money-basics",
+  },
+  // Grade 2 subjects (placeholder - can be added later)
+  2: {
+    "1": "math", // Keep existing for Grade 2
+  },
+  // Add more grades as needed
+};
+
+// Get actual subject ID from route parameter and grade
+function getSubjectId(routeSubjectId: string, grade: number): string {
+  const mapping = subjectMapping[grade as keyof typeof subjectMapping];
+  return mapping?.[routeSubjectId as keyof typeof mapping] || routeSubjectId;
+}
+
 // Get the middle grade for lesson generation (or could be user-specific)
 function getGradeFromGroup(gradeGroup: string): number {
   const grades =
@@ -61,6 +87,169 @@ const lessonContent: Record<
   >
 > = {
   "primary-early": {
+    // Grade 1 fallback subjects
+    counting: {
+      title: "Counting Fun",
+      lessons: [
+        {
+          type: "content",
+          title: "Numbers 1 to 10",
+          content:
+            "Let's count together! Numbers help us know how many things we have.",
+          example: "1 🐸, 2 🐸🐸, 3 🐸🐸🐸",
+        },
+        {
+          type: "quiz",
+          question: "Count the stars: ⭐⭐⭐⭐⭐",
+          options: ["3", "4", "5", "6"],
+          correctAnswer: 2,
+          explanation: "Let's count: 1, 2, 3, 4, 5! There are 5 stars.",
+        },
+      ],
+    },
+    "number-writing": {
+      title: "Writing Numbers",
+      lessons: [
+        {
+          type: "content",
+          title: "How to Write Numbers",
+          content:
+            "Each number has a special shape. Let's learn to write them!",
+          example:
+            "Number 1 is like a straight line | Number 2 looks like a swan",
+        },
+        {
+          type: "quiz",
+          question: "Which number comes after 3?",
+          options: ["2", "4", "5", "6"],
+          correctAnswer: 1,
+          explanation: "After 3 comes 4! Count: 1, 2, 3, 4",
+        },
+      ],
+    },
+    "addition-basic": {
+      title: "Basic Addition",
+      lessons: [
+        {
+          type: "content",
+          title: "Adding Numbers Together",
+          content:
+            "When we add, we put groups together to find how many in total!",
+          example: "2 + 1 = 3 (Two apples plus one apple equals three apples!)",
+        },
+        {
+          type: "quiz",
+          question: "What is 2 + 2?",
+          options: ["3", "4", "5", "6"],
+          correctAnswer: 1,
+          explanation:
+            "2 + 2 = 4! Count: 2 fingers, then 2 more fingers = 4 fingers total!",
+        },
+      ],
+    },
+    "subtraction-basic": {
+      title: "Basic Subtraction",
+      lessons: [
+        {
+          type: "content",
+          title: "Taking Numbers Away",
+          content:
+            "When we subtract, we take some away to see how many are left!",
+          example:
+            "5 - 2 = 3 (Start with 5 toys, take away 2, you have 3 left!)",
+        },
+        {
+          type: "quiz",
+          question: "What is 4 - 1?",
+          options: ["2", "3", "4", "5"],
+          correctAnswer: 1,
+          explanation:
+            "4 - 1 = 3! If you have 4 cookies and eat 1, you have 3 left!",
+        },
+      ],
+    },
+    "shapes-patterns": {
+      title: "Shapes & Patterns",
+      lessons: [
+        {
+          type: "content",
+          title: "Basic Shapes",
+          content:
+            "Shapes are all around us! Let's learn to recognize circles, squares, and triangles.",
+          example:
+            "🔴 Circle (like a ball), ⬜ Square (like a box), 🔺 Triangle (like a roof)",
+        },
+        {
+          type: "quiz",
+          question: "How many sides does a triangle have?",
+          options: ["2", "3", "4", "5"],
+          correctAnswer: 1,
+          explanation: "A triangle has 3 sides! Count them: 1, 2, 3!",
+        },
+      ],
+    },
+    "measurement-comparison": {
+      title: "Size & Measurement",
+      lessons: [
+        {
+          type: "content",
+          title: "Big and Small",
+          content: "We can compare things to see which is bigger or smaller!",
+          example: "An elephant 🐘 is bigger than a mouse 🐭",
+        },
+        {
+          type: "quiz",
+          question: "Which is longer: a pencil ✏️ or a ruler 📏?",
+          options: ["Pencil", "Ruler", "Same size", "Don't know"],
+          correctAnswer: 1,
+          explanation:
+            "A ruler is longer than a pencil! We use rulers to measure things!",
+        },
+      ],
+    },
+    "time-sequencing": {
+      title: "Time & Order",
+      lessons: [
+        {
+          type: "content",
+          title: "What Comes First?",
+          content:
+            "Things happen in order! Morning comes before afternoon, and afternoon comes before night.",
+          example:
+            "First we wake up ☀️, then we eat lunch 🍽️, then we go to bed 🌙",
+        },
+        {
+          type: "quiz",
+          question: "What comes after morning?",
+          options: ["Night", "Afternoon", "Sleep", "Breakfast"],
+          correctAnswer: 1,
+          explanation:
+            "After morning comes afternoon! The sun is high in the sky in the afternoon.",
+        },
+      ],
+    },
+    "money-basics": {
+      title: "Money Basics",
+      lessons: [
+        {
+          type: "content",
+          title: "Coins and Money",
+          content:
+            "Money helps us buy things! Coins come in different sizes and colors.",
+          example:
+            "A penny is small and brown 🪙. We use money to buy toys and food!",
+        },
+        {
+          type: "quiz",
+          question: "What do we use money for?",
+          options: ["Playing games", "Buying things", "Decoration", "Exercise"],
+          correctAnswer: 1,
+          explanation:
+            "We use money to buy things we need, like food, toys, and clothes!",
+        },
+      ],
+    },
+    // Original content
     math: {
       title: "Numbers Fun",
       lessons: [
@@ -605,31 +794,44 @@ export default function LessonPage({
         setError(null);
 
         const grade = getGradeFromGroup(gradeGroup);
+        const actualSubjectId = getSubjectId(subjectId, grade);
 
-        const result = await generateLesson(grade, subjectId);
+        console.log(
+          `🎓 Loading lesson: Grade ${grade}, Route Subject: ${subjectId}, Actual Subject: ${actualSubjectId}`
+        );
+
+        const result = await generateLesson(grade, actualSubjectId);
         setLesson(result.lesson);
 
         // Optional: Show cache status in dev mode
         if (process.env.NODE_ENV === "development") {
-          console.log(`🎓 Lesson loaded for Grade ${grade} ${subjectId}:`, {
-            fromCache: result.fromCache,
-            cacheId: result.cacheId,
-            title: result.lesson.title,
-            stepsCount: result.lesson.steps.length,
-          });
+          console.log(
+            `🎓 Lesson loaded for Grade ${grade} ${actualSubjectId}:`,
+            {
+              fromCache: result.fromCache,
+              cacheId: result.cacheId,
+              title: result.lesson.title,
+              stepsCount: result.lesson.steps.length,
+            }
+          );
         }
       } catch (err) {
         console.error("Failed to generate lesson:", err);
         setError(err instanceof Error ? err.message : "Failed to load lesson");
 
         // Fallback to legacy content if AI fails
-        const fallback = lessonContent[gradeGroup]?.[subjectId];
+        const gradeForFallback = getGradeFromGroup(gradeGroup);
+        const actualSubjectForFallback = getSubjectId(
+          subjectId,
+          gradeForFallback
+        );
+        const fallback = lessonContent[gradeGroup]?.[actualSubjectForFallback];
         if (fallback) {
           setLesson({
             title: fallback.title,
             cambridgeStage: "Fallback",
-            subject: subjectId,
-            grade: getGradeFromGroup(gradeGroup),
+            subject: actualSubjectForFallback,
+            grade: gradeForFallback,
             estimatedMinutes: 10,
             steps: fallback.lessons.map((l) => ({
               type: l.type,
@@ -724,7 +926,10 @@ export default function LessonPage({
     if (selectedAnswer === null) return;
     setShowResult(true);
 
-    if (currentLesson.type === "quiz" && selectedAnswer === currentLesson.correctAnswer) {
+    if (
+      currentLesson.type === "quiz" &&
+      selectedAnswer === currentLesson.correctAnswer
+    ) {
       setCorrectAnswers((prev) => prev + 1);
       setXpEarned((prev) => prev + 10);
     }
@@ -813,92 +1018,92 @@ export default function LessonPage({
           (() => {
             const quizStep = currentLesson as QuizStep;
             return (
-          <Card className="p-8">
-            <h2 className="text-2xl font-bold text-foreground mb-8 text-center">
-              {quizStep.question}
-            </h2>
+              <Card className="p-8">
+                <h2 className="text-2xl font-bold text-foreground mb-8 text-center">
+                  {quizStep.question}
+                </h2>
 
-            <div className="space-y-4 mb-8">
-              {quizStep.options?.map((option, index) => {
-                let buttonStyle =
-                  "border-2 border-border bg-card hover:border-primary hover:bg-accent";
+                <div className="space-y-4 mb-8">
+                  {quizStep.options?.map((option, index) => {
+                    let buttonStyle =
+                      "border-2 border-border bg-card hover:border-primary hover:bg-accent";
 
-                if (showResult) {
-                  if (index === quizStep.correctAnswer) {
-                    buttonStyle =
-                      "border-2 border-green-500 bg-green-50 text-green-700";
-                  } else if (
-                    index === selectedAnswer &&
-                    selectedAnswer !== quizStep.correctAnswer
-                  ) {
-                    buttonStyle =
-                      "border-2 border-red-500 bg-red-50 text-red-700";
-                  }
-                } else if (selectedAnswer === index) {
-                  buttonStyle = "border-2 border-primary bg-primary/10";
-                }
-
-                return (
-                  <button
-                    key={index}
-                    onClick={() => handleAnswerSelect(index)}
-                    disabled={showResult}
-                    className={`w-full p-4 rounded-xl text-left text-lg font-medium transition-all ${buttonStyle}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span>{option}</span>
-                      {showResult && index === quizStep.correctAnswer && (
-                        <CheckCircle2 className="h-6 w-6 text-green-500" />
-                      )}
-                      {showResult &&
+                    if (showResult) {
+                      if (index === quizStep.correctAnswer) {
+                        buttonStyle =
+                          "border-2 border-green-500 bg-green-50 text-green-700";
+                      } else if (
                         index === selectedAnswer &&
-                        selectedAnswer !== quizStep.correctAnswer && (
-                          <XCircle className="h-6 w-6 text-red-500" />
-                        )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                        selectedAnswer !== quizStep.correctAnswer
+                      ) {
+                        buttonStyle =
+                          "border-2 border-red-500 bg-red-50 text-red-700";
+                      }
+                    } else if (selectedAnswer === index) {
+                      buttonStyle = "border-2 border-primary bg-primary/10";
+                    }
 
-            {showResult && quizStep.explanation && (
-              <div
-                className={`rounded-xl p-4 mb-6 ${
-                  selectedAnswer === quizStep.correctAnswer
-                    ? "bg-green-50 border border-green-200"
-                    : "bg-amber-50 border border-amber-200"
-                }`}
-              >
-                <p className="text-foreground">{quizStep.explanation}</p>
-              </div>
-            )}
-
-            {quizStep.hint && !showResult && selectedAnswer !== null && (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                <div className="flex items-center gap-2 text-blue-700 mb-2">
-                  <Lightbulb className="h-4 w-4" />
-                  <span className="font-semibold">Hint</span>
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => handleAnswerSelect(index)}
+                        disabled={showResult}
+                        className={`w-full p-4 rounded-xl text-left text-lg font-medium transition-all ${buttonStyle}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span>{option}</span>
+                          {showResult && index === quizStep.correctAnswer && (
+                            <CheckCircle2 className="h-6 w-6 text-green-500" />
+                          )}
+                          {showResult &&
+                            index === selectedAnswer &&
+                            selectedAnswer !== quizStep.correctAnswer && (
+                              <XCircle className="h-6 w-6 text-red-500" />
+                            )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-                <p className="text-blue-800">{quizStep.hint}</p>
-              </div>
-            )}
 
-            {!showResult ? (
-              <Button
-                size="lg"
-                className="w-full"
-                onClick={handleCheckAnswer}
-                disabled={selectedAnswer === null}
-              >
-                Check Answer
-              </Button>
-            ) : (
-              <Button size="lg" className="w-full" onClick={handleNext}>
-                {isLastStep ? "See Results" : "Continue"}
-                <ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
-            )}
-          </Card>
+                {showResult && quizStep.explanation && (
+                  <div
+                    className={`rounded-xl p-4 mb-6 ${
+                      selectedAnswer === quizStep.correctAnswer
+                        ? "bg-green-50 border border-green-200"
+                        : "bg-amber-50 border border-amber-200"
+                    }`}
+                  >
+                    <p className="text-foreground">{quizStep.explanation}</p>
+                  </div>
+                )}
+
+                {quizStep.hint && !showResult && selectedAnswer !== null && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                    <div className="flex items-center gap-2 text-blue-700 mb-2">
+                      <Lightbulb className="h-4 w-4" />
+                      <span className="font-semibold">Hint</span>
+                    </div>
+                    <p className="text-blue-800">{quizStep.hint}</p>
+                  </div>
+                )}
+
+                {!showResult ? (
+                  <Button
+                    size="lg"
+                    className="w-full"
+                    onClick={handleCheckAnswer}
+                    disabled={selectedAnswer === null}
+                  >
+                    Check Answer
+                  </Button>
+                ) : (
+                  <Button size="lg" className="w-full" onClick={handleNext}>
+                    {isLastStep ? "See Results" : "Continue"}
+                    <ArrowRight className="h-5 w-5 ml-2" />
+                  </Button>
+                )}
+              </Card>
             );
           })()
         )}

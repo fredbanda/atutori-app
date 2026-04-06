@@ -1,11 +1,11 @@
 // lib/actions/generate-lesson.ts
-"use server"
+"use server";
 
-import Anthropic from "@anthropic-ai/sdk"
-import  prisma  from "@/utils/prisma"
-import { redis } from "@/lib/redis" // your existing Redis client
+import Anthropic from "@anthropic-ai/sdk";
+import prisma from "@/utils/prisma";
+import { redis } from "@/lib/redis"; // your existing Redis client
 
-const anthropic = new Anthropic()
+const anthropic = new Anthropic();
 
 // ─────────────────────────────────────────────────────────────────
 // TYPES
@@ -13,31 +13,31 @@ const anthropic = new Anthropic()
 // Import these wherever you render lessons.
 // ─────────────────────────────────────────────────────────────────
 export type ContentStep = {
-  type: "content"
-  title: string
-  content: string
-  example: string
-}
+  type: "content";
+  title: string;
+  content: string;
+  example: string;
+};
 
 export type QuizStep = {
-  type: "quiz"
-  question: string
-  options: string[]
-  correctAnswer: number
-  explanation: string
-  hint?: string
-}
+  type: "quiz";
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  explanation: string;
+  hint?: string;
+};
 
-export type LessonStep = ContentStep | QuizStep
+export type LessonStep = ContentStep | QuizStep;
 
 export type GeneratedLesson = {
-  title: string
-  cambridgeStage: string
-  subject: string
-  grade: number
-  estimatedMinutes: number
-  steps: LessonStep[]
-}
+  title: string;
+  cambridgeStage: string;
+  subject: string;
+  grade: number;
+  estimatedMinutes: number;
+  steps: LessonStep[];
+};
 
 // ─────────────────────────────────────────────────────────────────
 // REDIS KEY + TTL
@@ -45,7 +45,7 @@ export type GeneratedLesson = {
 // TTL: 24 hours — after expiry Claude regenerates with fresh
 // examples while staying on the same curriculum angle.
 // ─────────────────────────────────────────────────────────────────
-const REDIS_TTL_SECONDS = 60 * 60 * 24 // 24 hours
+const REDIS_TTL_SECONDS = 60 * 60 * 24; // 24 hours
 
 function buildRedisKey(
   grade: number,
@@ -56,8 +56,8 @@ function buildRedisKey(
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
-    .slice(0, 50)
-  return `lesson:${grade}:${subjectId}:${slug}`
+    .slice(0, 50);
+  return `lesson:${grade}:${subjectId}:${slug}`;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -74,31 +74,44 @@ export async function generateLesson(
   subjectId: string,
   forceRegenerate = false
 ): Promise<{
-  lesson: GeneratedLesson
-  fromCache: boolean
-  cacheId: string
+  lesson: GeneratedLesson;
+  fromCache: boolean;
+  cacheId: string;
 }> {
   // Step 1 — load prompt
   const prompt = await prisma.subjectPrompt.findFirst({
     where: { subjectId, grade, isActive: true },
     orderBy: { version: "desc" }, // always use the latest version
-  })
+  });
 
   if (!prompt) {
     throw new Error(
       `No active SubjectPrompt found for grade ${grade}, subject "${subjectId}". ` +
-      `Run the seed file first.`
-    )
+        `Run the seed file first.`
+    );
   }
 
-  const redisKey = buildRedisKey(grade, subjectId, prompt.topicFocus ?? subjectId)
-  const cacheKey = `${grade}:${subjectId}`
+  const redisKey = buildRedisKey(
+    grade,
+    subjectId,
+    prompt.topicFocus ?? subjectId
+  );
+  const cacheKey = `${grade}:${subjectId}`;
 
   // Step 2 — Redis cache check
   if (!forceRegenerate) {
-    const cached = await redis.get(redisKey)
+    const cached = await redis.get(redisKey);
+    console.log(
+      "Redis cached value type:",
+      typeof cached,
+      "Value preview:",
+      String(cached).slice(0, 100)
+    );
+
     if (cached) {
-      const dbCache = await prisma.lessonCache.findUnique({ where: { redisKey } })
+      const dbCache = await prisma.lessonCache.findUnique({
+        where: { redisKey },
+      });
       if (dbCache) {
         // Fire-and-forget usage tracking — never block the response
         prisma.lessonCache
@@ -106,13 +119,25 @@ export async function generateLesson(
             where: { id: dbCache.id },
             data: { useCount: { increment: 1 }, lastUsedAt: new Date() },
           })
-          .catch(() => {})
+          .catch(() => {});
+
+        // Handle cached data properly - it might be an object or string
+        let lesson: GeneratedLesson;
+        if (typeof cached === "string") {
+          lesson = JSON.parse(cached) as GeneratedLesson;
+        } else if (typeof cached === "object" && cached !== null) {
+          // If Redis returns an object directly, use it
+          lesson = cached as GeneratedLesson;
+        } else {
+          // Fallback to database cache if Redis data is corrupted
+          lesson = dbCache.generatedContent as GeneratedLesson;
+        }
 
         return {
-          lesson: JSON.parse(cached as any) as GeneratedLesson,
+          lesson,
           fromCache: true,
           cacheId: dbCache.id,
-        }
+        };
       }
     }
   }
@@ -123,36 +148,47 @@ export async function generateLesson(
     max_tokens: 2000,
     system: prompt.systemPrompt,
     messages: [{ role: "user", content: prompt.userPrompt }],
-  })
+  });
 
   const rawText = response.content
     .filter((b) => b.type === "text")
     .map((b) => (b as { type: "text"; text: string }).text)
-    .join("")
+    .join("");
 
   // Step 4 — parse + validate
-  let lesson: GeneratedLesson
+  let lesson: GeneratedLesson;
   try {
     // Strip accidental markdown fences just in case
     const clean = rawText
       .replace(/^```json\s*/i, "")
       .replace(/^```\s*/i, "")
       .replace(/\s*```$/i, "")
-      .trim()
-    lesson = JSON.parse(clean)
+      .trim();
+    lesson = JSON.parse(clean);
   } catch {
     throw new Error(
       `Claude returned invalid JSON.\n` +
-      `First 300 chars: ${rawText.slice(0, 300)}`
-    )
+        `First 300 chars: ${rawText.slice(0, 300)}`
+    );
   }
 
   // Basic shape validation — catch prompt regressions early
-  if (!lesson.steps || lesson.steps.length !== 6) {
+  if (!lesson.steps || lesson.steps.length === 0) {
     throw new Error(
-      `Expected 6 steps (3 content + 3 quiz), got ${lesson.steps?.length ?? 0}. ` +
-      `Check the system prompt output rules.`
-    )
+      `No steps generated. Got ${lesson.steps?.length ?? 0} steps. ` +
+        `Check the system prompt output rules.`
+    );
+  }
+
+  // Ensure we have both content and quiz steps
+  const contentSteps = lesson.steps.filter((step) => step.type === "content");
+  const quizSteps = lesson.steps.filter((step) => step.type === "quiz");
+
+  if (contentSteps.length === 0 || quizSteps.length === 0) {
+    throw new Error(
+      `Invalid lesson structure: ${contentSteps.length} content steps, ${quizSteps.length} quiz steps. ` +
+        `Must have at least one of each type.`
+    );
   }
 
   // Step 5 — persist to DB (upsert handles re-runs safely)
@@ -175,12 +211,12 @@ export async function generateLesson(
       lastUsedAt: new Date(),
       expiresAt: new Date(Date.now() + REDIS_TTL_SECONDS * 1000),
     },
-  })
+  });
 
   // Step 5b — write to Redis with TTL
-  await redis.set(redisKey, JSON.stringify(lesson), { ex: REDIS_TTL_SECONDS })
+  await redis.set(redisKey, JSON.stringify(lesson), { ex: REDIS_TTL_SECONDS });
 
-  return { lesson, fromCache: false, cacheId: dbCache.id }
+  return { lesson, fromCache: false, cacheId: dbCache.id };
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -200,18 +236,18 @@ export async function recordLessonAttempt({
   answers,
   durationSeconds,
 }: {
-  userId: string
-  cacheId: string
-  subjectId: string
-  grade: number
-  cambridgeStage: string
-  score: number
-  totalQuestions: number
-  xpEarned: number
-  answers: { questionIndex: number; selected: number; correct: boolean }[]
-  durationSeconds?: number
+  userId: string;
+  cacheId: string;
+  subjectId: string;
+  grade: number;
+  cambridgeStage: string;
+  score: number;
+  totalQuestions: number;
+  xpEarned: number;
+  answers: { questionIndex: number; selected: number; correct: boolean }[];
+  durationSeconds?: number;
 }) {
-  const passed = score / totalQuestions >= 0.7 // 70% pass threshold
+  const passed = score / totalQuestions >= 0.7; // 70% pass threshold
 
   const [attempt] = await prisma.$transaction([
     prisma.lessonAttempt.create({
@@ -237,7 +273,8 @@ export async function recordLessonAttempt({
         lastActiveAt: new Date(),
       },
     }),
-  ])
+  ]);
 
-  return { attempt, passed }
+  return { attempt, passed };
 }
+
