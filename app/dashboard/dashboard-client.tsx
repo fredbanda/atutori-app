@@ -13,6 +13,7 @@ import {
   Sparkles,
   LogOut,
   User,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,6 +39,7 @@ interface DashboardClientProps {
     email: string;
     image?: string | null;
   };
+  profileComplete: boolean;
 }
 
 type View = "dashboard" | "lesson" | "quiz" | "results";
@@ -355,7 +357,7 @@ const subjectNames: Record<string, string> = {
   music: "Music",
 };
 
-export function DashboardClient({ user }: DashboardClientProps) {
+export function DashboardClient({ user, profileComplete }: DashboardClientProps) {
   const router = useRouter();
   const [currentView, setCurrentView] = useState<View>("dashboard");
   const [currentSubject, setCurrentSubject] = useState<string>("math");
@@ -505,6 +507,30 @@ export function DashboardClient({ user }: DashboardClientProps) {
 
       {/* Main Content */}
       <main className="mx-auto max-w-6xl px-4 py-6 md:px-6 md:py-8">
+        {/* Profile completion banner */}
+        {!profileComplete && (
+          <div className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <div>
+                <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                  Finish your profile
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  Add your Cambridge details to unlock exam registration and credit transfers.
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              className="shrink-0 rounded-xl bg-amber-600 text-white hover:bg-amber-700"
+              onClick={() => router.push("/profile/complete")}
+            >
+              Complete now
+            </Button>
+          </div>
+        )}
+
         {/* Welcome Section */}
         <section className="mb-8">
           <Card className="overflow-hidden rounded-3xl border-0 bg-gradient-to-br from-primary to-primary/80 shadow-lg">
