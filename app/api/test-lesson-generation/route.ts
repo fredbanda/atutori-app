@@ -35,8 +35,34 @@ export async function GET(request: NextRequest) {
 
     console.log(`📚 Using grade ${grade} for group ${gradeGroup}`);
 
+    // Apply subject mapping for proper Grade 1 curriculum
+    const subjectMapping = {
+      1: {
+        "1": "counting",
+        "2": "number-writing", 
+        "3": "addition-basic",
+        "4": "subtraction-basic",
+        "5": "shapes-patterns",
+        "6": "measurement-comparison",
+        "7": "time-sequencing",
+        "8": "money-basics",
+        "math": "counting", // Legacy fallback
+      },
+      2: {
+        "math": "math", // Direct mapping for Grade 2
+      },
+    };
+
+    function getActualSubjectId(routeSubjectId: string, grade: number): string {
+      const mapping = subjectMapping[grade as keyof typeof subjectMapping];
+      return mapping?.[routeSubjectId as keyof typeof mapping] || routeSubjectId;
+    }
+
+    const actualSubjectId = getActualSubjectId(subjectId, grade);
+    console.log(`🔄 Subject mapping: ${subjectId} → ${actualSubjectId} for Grade ${grade}`);
+
     const startTime = Date.now();
-    const result = await generateLesson(grade, subjectId);
+    const result = await generateLesson(grade, actualSubjectId);
     const endTime = Date.now();
 
     console.log(`✅ Lesson generation successful in ${endTime - startTime}ms`);

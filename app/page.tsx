@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, Sparkles, Star, Trophy, Zap, Users } from "lucide-react";
 import Image from "next/image";
-import Logo from "@/public/logo-eatutori.png"
+import Logo from "@/public/logo-eatutori.png";
 
 export default function LandingPage() {
   return (
@@ -15,7 +15,9 @@ export default function LandingPage() {
             <div className="relative">
               <Image src={Logo} alt="Eatutori Logo" width={60} height={40} />
             </div>
-            <span className="text-3xl font-bold text-4xlforeground mb-[-0.5rem]">Eatutori</span>
+            <span className="text-3xl font-bold text-4xlforeground mb-[-0.5rem]">
+              Eatutori
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" asChild>

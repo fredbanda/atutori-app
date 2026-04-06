@@ -45,10 +45,13 @@ const subjectMapping = {
     "6": "measurement-comparison",
     "7": "time-sequencing",
     "8": "money-basics",
+    // Legacy fallback - map "math" to counting for Grade 1
+    "math": "counting",
   },
   // Grade 2 subjects (placeholder - can be added later)
   2: {
     "1": "math", // Keep existing for Grade 2
+    "math": "math", // Direct mapping for Grade 2
   },
   // Add more grades as needed
 };
@@ -59,10 +62,17 @@ function getSubjectId(routeSubjectId: string, grade: number): string {
   return mapping?.[routeSubjectId as keyof typeof mapping] || routeSubjectId;
 }
 
-// Get the middle grade for lesson generation (or could be user-specific)
+// Get the appropriate grade for lesson generation
 function getGradeFromGroup(gradeGroup: string): number {
   const grades =
     gradeGroupToGrade[gradeGroup as keyof typeof gradeGroupToGrade];
+
+  // For primary-early, use Grade 1 (where our comprehensive curriculum is)
+  if (gradeGroup === "primary-early") {
+    return 1;
+  }
+
+  // For other groups, use the middle grade
   return grades ? grades[Math.floor(grades.length / 2)] : 6; // default to grade 6
 }
 

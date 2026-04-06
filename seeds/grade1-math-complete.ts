@@ -37,6 +37,14 @@ const OUTPUT_SCHEMA = `{
       "title": "string — step title",
       "content": "string — main explanation", 
       "example": "string — concrete example or visual description"
+    },
+    {
+      "type": "quiz",
+      "title": "string — quiz question title",
+      "question": "string — the question to ask",
+      "options": ["string", "string", "string", "string"],
+      "correctAnswer": "number — index of correct option (0-3)",
+      "explanation": "string — why this answer is correct"
     }
   ]
 }`;
@@ -48,15 +56,18 @@ Topic Focus: ${topicAngle}
 
 Requirements:
 - Create exactly 3 content steps that build understanding progressively
+- Create exactly 3 quiz steps to check understanding
 - Use simple vocabulary appropriate for ${
     grade === 1 ? "5-6 year olds" : "6-7 year olds"
   }
 - Include concrete examples and visual descriptions
+- Make quiz questions fun and age-appropriate with 4 options each
+- Ensure all quiz options are plausible for young children
 - Make it engaging with encouragement and positive language
 - Ensure alignment with Cambridge KS1 learning objectives
 - Keep each step concise but complete (2-3 sentences per content section)
 
-Generate a comprehensive lesson following the exact JSON schema provided.`;
+Generate a comprehensive lesson with 6 steps total (3 content + 3 quiz) following the exact JSON schema provided.`;
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -74,7 +85,7 @@ const grade1MathCurriculum = [
     version: 1,
     isActive: true,
     contentSteps: 3,
-    quizCount: 0,
+    quizCount: 3,
     difficultyHint: "foundational",
     topicFocus:
       "Counting objects 1 to 10 — one-to-one correspondence and cardinality",
@@ -97,7 +108,7 @@ const grade1MathCurriculum = [
     version: 1,
     isActive: true,
     contentSteps: 3,
-    quizCount: 0,
+    quizCount: 3,
     difficultyHint: "foundational",
     topicFocus: "Writing numbers 1-10 correctly with proper formation",
     systemPrompt: SYSTEM_PROMPT,
