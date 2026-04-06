@@ -165,19 +165,15 @@ export default function Grade1MathPage() {
                       </Link>
                     </Button>
 
-                    {/* Test API button for debugging */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        window.open(
-                          `/api/test-lesson-generation?grade=1&subjectId=${subject.id}`,
-                          "_blank"
-                        );
-                      }}
-                      className="text-xs"
-                    >
-                      Test API
+                    {/* Test API button for debugging (use anchor to avoid passing event handlers from server components) */}
+                    <Button variant="outline" size="sm" className="text-xs" asChild>
+                      <a
+                        href={`/api/test-lesson-generation?grade=1&subjectId=${subject.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Test API
+                      </a>
                     </Button>
                   </div>
                 </div>
