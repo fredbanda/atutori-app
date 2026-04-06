@@ -70,17 +70,17 @@ async function testClaudeResponse() {
       console.log("  Steps:", lesson.steps?.length || 0);
       console.log(
         "  Content steps:",
-        lesson.steps?.filter((s) => s.type === "content").length || 0
+        lesson.steps?.filter((s: { type: string }) => s.type === "content").length || 0
       );
       console.log(
         "  Quiz steps:",
-        lesson.steps?.filter((s) => s.type === "quiz").length || 0
+        lesson.steps?.filter((s: { type: string }) => s.type === "quiz").length || 0
       );
     } catch (error) {
-      console.error("❌ JSON parsing failed:", error.message);
+      console.error("❌ JSON parsing failed:", error instanceof Error ? error.message : error);
     }
   } catch (error) {
-    console.error("❌ Claude request failed:", error.message);
+    console.error("❌ Claude request failed:", error instanceof Error ? error.message : error);
   }
 
   await prisma.$disconnect();

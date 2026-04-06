@@ -1,147 +1,242 @@
-"use client"
+"use client";
 
-import { use, useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Star, Trophy, ArrowRight, RotateCcw, Sparkles } from "lucide-react"
-import confetti from "canvas-confetti"
+import { use, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  ArrowRight,
+  RotateCcw,
+  Home,
+  Star,
+  Trophy,
+  Flame,
+  BookOpen,
+} from "lucide-react";
 
+// ── Grade group → next subject suggestion ──────
+const subjectSuggestions: Record<string, { id: string; label: string }[]> = {
+  "primary-early": [
+    { id: "math", label: "Maths" },
+    { id: "english", label: "English" },
+  ],
+  "primary-mid": [
+    { id: "math", label: "Maths" },
+    { id: "science", label: "Science" },
+    { id: "english", label: "English" },
+  ],
+  "primary-upper": [
+    { id: "math", label: "Maths" },
+    { id: "science", label: "Science" },
+    { id: "english", label: "English" },
+  ],
+  "high-junior": [
+    { id: "math", label: "Maths" },
+    { id: "science", label: "Science" },
+    { id: "english", label: "English" },
+  ],
+  "high-senior": [
+    { id: "math", label: "Maths" },
+    { id: "science", label: "Science" },
+  ],
+};
+
+// ── XP thresholds per grade level ─────────────
+function getLevelFromXp(xp: number): {
+  level: number;
+  progress: number;
+  nextAt: number;
+} {
+  const thresholds = [0, 50, 120, 220, 360, 550, 800, 1100, 1500, 2000];
+  let level = 1;
+  for (let i = 0; i < thresholds.length; i++) {
+    if (xp >= thresholds[i]) level = i + 1;
+    else break;
+  }
+  const currentAt = thresholds[level - 1] ?? 0;
+  const nextAt = thresholds[level] ?? thresholds[thresholds.length - 1] + 500;
+  const progress = Math.min(
+    100,
+    Math.round(((xp - currentAt) / (nextAt - currentAt)) * 100)
+  );
+  return { level, progress, nextAt };
+}
+
+// ── Result rating ──────────────────────────────
+function getRating(correct: number, total: number) {
+  const pct = total > 0 ? correct / total : 0;
+  if (pct === 1)
+    return { emoji: "🏆", label: "Perfect score!", color: "text-amber-500" };
+  if (pct >= 0.67)
+    return { emoji: "⭐", label: "Great job!", color: "text-green-500" };
+  if (pct >= 0.34)
+    return { emoji: "💪", label: "Good effort!", color: "text-blue-500" };
+  return { emoji: "🌱", label: "Keep practising!", color: "text-purple-500" };
+}
+
+// ── Animated counter hook ──────────────────────
+function useCountUp(target: number, duration = 1200) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (target === 0) return;
+    const steps = 40;
+    const increment = target / steps;
+    const interval = duration / steps;
+    let current = 0;
+    const timer = setInterval(() => {
+      current = Math.min(current + increment, target);
+      setValue(Math.round(current));
+      if (current >= target) clearInterval(timer);
+    }, interval);
+    return () => clearInterval(timer);
+  }, [target, duration]);
+  return value;
+}
+
+// ── Component ──────────────────────────────────
 export default function ResultsPage({
   params,
 }: {
-  params: Promise<{ gradeGroup: string; subjectId: string }>
+  params: Promise<{ gradeGroup: string; subjectId: string }>;
 }) {
-  const { gradeGroup, subjectId } = use(params)
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [saved, setSaved] = useState(false)
+  const { gradeGroup, subjectId } = use(params);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const correct = parseInt(searchParams.get("correct") || "0")
-  const total = parseInt(searchParams.get("total") || "1")
-  const xpEarned = parseInt(searchParams.get("xp") || "0")
+  const correct = parseInt(searchParams.get("correct") ?? "0");
+  const total = parseInt(searchParams.get("total") ?? "3");
+  const xpEarned = parseInt(searchParams.get("xp") ?? "0");
 
-  const percentage = total > 0 ? Math.round((correct / total) * 100) : 100
-  const stars = percentage >= 80 ? 3 : percentage >= 60 ? 2 : percentage >= 40 ? 1 : 0
+  // Fake a running total — replace with real user XP from session
+  const totalXp = xpEarned + 40; // TODO: replace 40 with user.xp from DB
+  const { level, progress: levelProgress } = getLevelFromXp(totalXp);
 
-  useEffect(() => {
-    // Trigger confetti on mount if good score
-    if (percentage >= 60) {
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-      })
-    }
+  const rating = getRating(correct, total);
+  const animatedXp = useCountUp(xpEarned);
+  const animatedCorrect = useCountUp(correct);
 
-    // Save progress to database
-    const saveProgress = async () => {
-      try {
-        await fetch("/api/user/update-progress", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            xpEarned,
-            subjectId,
-            correct,
-            total,
-          }),
-        })
-        setSaved(true)
-      } catch (error) {
-        console.error("Failed to save progress:", error)
-      }
-    }
-
-    saveProgress()
-  }, [percentage, xpEarned, subjectId, correct, total])
-
-  const getMessage = () => {
-    if (percentage >= 80) return "Amazing work!"
-    if (percentage >= 60) return "Great job!"
-    if (percentage >= 40) return "Good effort!"
-    return "Keep practicing!"
-  }
-
-  const getEmoji = () => {
-    if (percentage >= 80) return "🎉"
-    if (percentage >= 60) return "🌟"
-    if (percentage >= 40) return "👍"
-    return "💪"
-  }
+  const suggestions = (subjectSuggestions[gradeGroup] ?? []).filter(
+    (s) => s.id !== subjectId
+  );
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md p-8 text-center">
-        {/* Celebration Icon */}
-        <div className="mb-6">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4">
-            {percentage >= 60 ? (
-              <Trophy className="h-10 w-10 text-primary" />
-            ) : (
-              <Sparkles className="h-10 w-10 text-primary" />
-            )}
-          </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            {getMessage()} {getEmoji()}
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md space-y-6">
+        {/* ── Rating card ── */}
+        <Card className="p-8 text-center space-y-3">
+          <div className="text-6xl mb-2">{rating.emoji}</div>
+          <h1 className={`text-2xl font-bold ${rating.color}`}>
+            {rating.label}
           </h1>
-          <p className="text-muted-foreground">Lesson Complete</p>
-        </div>
-
-        {/* Score */}
-        <div className="bg-accent/50 rounded-2xl p-6 mb-6">
-          <div className="text-5xl font-bold text-foreground mb-2">
-            {percentage}%
-          </div>
-          <p className="text-muted-foreground">
-            {correct} out of {total} correct
+          <p className="text-muted-foreground text-sm">
+            You answered{" "}
+            <span className="font-bold text-foreground">
+              {animatedCorrect} out of {total}
+            </span>{" "}
+            questions correctly
           </p>
-        </div>
 
-        {/* Stars */}
-        <div className="flex justify-center gap-2 mb-6">
-          {[1, 2, 3].map((star) => (
-            <Star
-              key={star}
-              className={`h-10 w-10 transition-all duration-500 ${
-                star <= stars
-                  ? "text-amber-400 fill-amber-400 scale-110"
-                  : "text-muted"
-              }`}
-              style={{
-                transitionDelay: `${star * 200}ms`,
-              }}
-            />
-          ))}
-        </div>
+          {/* Score dots */}
+          <div className="flex justify-center gap-3 pt-2">
+            {Array.from({ length: total }).map((_, i) => (
+              <div
+                key={i}
+                className={`h-4 w-4 rounded-full transition-all duration-500 ${
+                  i < correct ? "bg-green-500" : "bg-muted"
+                }`}
+                style={{ transitionDelay: `${i * 150}ms` }}
+              />
+            ))}
+          </div>
+        </Card>
 
-        {/* XP Earned */}
-        <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-700 rounded-full px-4 py-2 mb-8">
-          <Star className="h-5 w-5 fill-current" />
-          <span className="font-bold">+{xpEarned} XP earned!</span>
-        </div>
+        {/* ── XP card ── */}
+        <Card className="p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-amber-500 fill-current" />
+              <span className="font-semibold text-foreground">XP Earned</span>
+            </div>
+            <span className="text-2xl font-bold text-amber-500">
+              +{animatedXp}
+            </span>
+          </div>
 
-        {/* Actions */}
+          {/* Level progress bar */}
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Trophy className="h-3 w-3" />
+                Level {level}
+              </span>
+              <span>{levelProgress}% to next level</span>
+            </div>
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-amber-500 rounded-full transition-all duration-1000 ease-out"
+                style={{ width: `${levelProgress}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Streak nudge */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground pt-1 border-t">
+            <Flame className="h-4 w-4 text-orange-500" />
+            <span>Come back tomorrow to keep your streak going! 🔥</span>
+          </div>
+        </Card>
+
+        {/* ── Actions ── */}
         <div className="space-y-3">
+          {/* Try a different lesson of the same subject */}
           <Button
             size="lg"
+            className="w-full"
+            onClick={() =>
+              router.push(
+                `/playground/${gradeGroup}/lesson/${subjectId}?refresh=1`
+              )
+            }
+          >
+            <RotateCcw className="h-5 w-5 mr-2" />
+            Try a fresh lesson
+          </Button>
+
+          {/* Suggest another subject */}
+          {suggestions.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs text-center text-muted-foreground">
+                Or jump to another subject
+              </p>
+              <div className="flex gap-2">
+                {suggestions.slice(0, 2).map((s) => (
+                  <Button
+                    key={s.id}
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() =>
+                      router.push(`/playground/${gradeGroup}/lesson/${s.id}`)
+                    }
+                  >
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    {s.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Back to playground */}
+          <Button
+            variant="ghost"
             className="w-full"
             onClick={() => router.push(`/playground/${gradeGroup}`)}
           >
-            Continue Learning
-            <ArrowRight className="h-5 w-5 ml-2" />
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            className="w-full"
-            onClick={() => router.push(`/playground/${gradeGroup}/lesson/${subjectId}`)}
-          >
-            <RotateCcw className="h-5 w-5 mr-2" />
-            Try Again
+            <Home className="h-4 w-4 mr-2" />
+            Back to playground
           </Button>
         </div>
-      </Card>
+      </div>
     </div>
-  )
+  );
 }
