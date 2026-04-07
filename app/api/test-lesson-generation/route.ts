@@ -39,30 +39,48 @@ export async function GET(request: NextRequest) {
     const subjectMapping = {
       1: {
         "1": "counting",
-        "2": "number-writing", 
+        "2": "number-writing",
         "3": "addition-basic",
         "4": "subtraction-basic",
         "5": "shapes-patterns",
         "6": "measurement-comparison",
         "7": "time-sequencing",
         "8": "money-basics",
-        "math": "counting", // Legacy fallback
+        math: "counting", // Legacy fallback
       },
       2: {
-        "math": "math", // Direct mapping for Grade 2
+        math: "math", // Direct mapping for Grade 2
       },
     };
 
     function getActualSubjectId(routeSubjectId: string, grade: number): string {
       const mapping = subjectMapping[grade as keyof typeof subjectMapping];
-      return mapping?.[routeSubjectId as keyof typeof mapping] || routeSubjectId;
+      return (
+        mapping?.[routeSubjectId as keyof typeof mapping] || routeSubjectId
+      );
     }
 
     const actualSubjectId = getActualSubjectId(subjectId, grade);
-    console.log(`🔄 Subject mapping: ${subjectId} → ${actualSubjectId} for Grade ${grade}`);
+    console.log(
+      `🔄 Subject mapping: ${subjectId} → ${actualSubjectId} for Grade ${grade}`
+    );
+
+    // Get version parameter (default to 1)
+    const versionParam = searchParams.get("version");
+    const lessonVersion = versionParam ? parseInt(versionParam) : 1;
+    console.log(`📖 Using lesson version: ${lessonVersion}`);
+
+    // Get forceRegenerate parameter
+    const forceRegenerate = searchParams.get("forceRegenerate") === "true";
+    console.log(`🔄 Force regenerate: ${forceRegenerate}`);
 
     const startTime = Date.now();
-    const result = await generateLesson(grade, actualSubjectId);
+    const result = await generateLesson(
+      grade,
+      actualSubjectId,
+      lessonVersion,
+      forceRegenerate
+    );
     const endTime = Date.now();
 
     console.log(`✅ Lesson generation successful in ${endTime - startTime}ms`);
@@ -72,6 +90,8 @@ export async function GET(request: NextRequest) {
       duration: endTime - startTime,
       fromCache: result.fromCache,
       cacheId: result.cacheId,
+      version: result.version,
+      isLastLesson: result.isLastLesson,
       lesson: {
         title: result.lesson.title,
         subject: result.lesson.subject,
@@ -100,7 +120,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { gradeGroup, subjectId = "math", forceRegenerate = false } = body;
+    const {
+      gradeGroup,
+      subjectId = "math",
+      forceRegenerate = false,
+      version = 1,
+    } = body;
     let { grade } = body;
 
     console.log(
@@ -108,6 +133,7 @@ export async function POST(request: NextRequest) {
       {
         forceRegenerate,
         grade,
+        version,
       }
     );
 
@@ -127,7 +153,12 @@ export async function POST(request: NextRequest) {
     }
 
     const startTime = Date.now();
-    const result = await generateLesson(grade, subjectId, forceRegenerate);
+    const result = await generateLesson(
+      grade,
+      subjectId,
+      version,
+      forceRegenerate
+    );
     const endTime = Date.now();
 
     console.log(

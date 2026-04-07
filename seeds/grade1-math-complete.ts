@@ -27,23 +27,22 @@ Always structure lessons with:
 // Output schema
 const OUTPUT_SCHEMA = `{
   "title": "string — lesson title",
-  "subject": "string — always 'math'", 
-  "grade": "number — 1 or 2",
-  "cambridgeStage": "string — always 'KS1'",
-  "estimatedMinutes": "number — 10-15 minutes",
+  "subject": "math",
+  "grade": 1,
+  "cambridgeStage": "KS1",
+  "estimatedMinutes": 10,
   "steps": [
     {
       "type": "content",
       "title": "string — step title",
-      "content": "string — main explanation", 
+      "content": "string — main explanation",
       "example": "string — concrete example or visual description"
     },
     {
       "type": "quiz",
-      "title": "string — quiz question title",
       "question": "string — the question to ask",
       "options": ["string", "string", "string", "string"],
-      "correctAnswer": "number — index of correct option (0-3)",
+      "correctAnswer": 0,
       "explanation": "string — why this answer is correct"
     }
   ]
@@ -55,19 +54,18 @@ function buildUserPrompt(grade: number, topicAngle: string): string {
 Topic Focus: ${topicAngle}
 
 Requirements:
-- Create exactly 3 content steps that build understanding progressively
-- Create exactly 3 quiz steps to check understanding
+- Create exactly 3 content steps followed by exactly 3 quiz steps (6 steps total)
 - Use simple vocabulary appropriate for ${
     grade === 1 ? "5-6 year olds" : "6-7 year olds"
   }
 - Include concrete examples and visual descriptions
-- Make quiz questions fun and age-appropriate with 4 options each
-- Ensure all quiz options are plausible for young children
+- Each quiz must have exactly 4 options and correctAnswer as a number (0-3)
 - Make it engaging with encouragement and positive language
-- Ensure alignment with Cambridge KS1 learning objectives
-- Keep each step concise but complete (2-3 sentences per content section)
+- Keep each content step concise (2-3 sentences)
 
-Generate a comprehensive lesson with 6 steps total (3 content + 3 quiz) following the exact JSON schema provided.`;
+Respond with ONLY a valid JSON object matching this exact schema — no markdown, no explanation, no wrapper keys:
+
+${OUTPUT_SCHEMA}`;
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -130,7 +128,7 @@ const grade1MathCurriculum = [
     version: 1,
     isActive: true,
     contentSteps: 3,
-    quizCount: 0,
+    quizCount: 3,
     difficultyHint: "foundational",
     topicFocus:
       "Adding two groups of objects (sums within 10) using concrete materials",
@@ -153,7 +151,7 @@ const grade1MathCurriculum = [
     version: 1,
     isActive: true,
     contentSteps: 3,
-    quizCount: 0,
+    quizCount: 3,
     difficultyHint: "foundational",
     topicFocus:
       "Taking away objects (within 10) using concrete materials and counting",
@@ -176,7 +174,7 @@ const grade1MathCurriculum = [
     version: 1,
     isActive: true,
     contentSteps: 3,
-    quizCount: 0,
+    quizCount: 3,
     difficultyHint: "foundational",
     topicFocus:
       "Recognizing basic 2D shapes (circle, square, triangle, rectangle) and simple patterns",
@@ -199,7 +197,7 @@ const grade1MathCurriculum = [
     version: 1,
     isActive: true,
     contentSteps: 3,
-    quizCount: 0,
+    quizCount: 3,
     difficultyHint: "foundational",
     topicFocus:
       "Comparing lengths, heights, and weights using everyday language (longer/shorter, taller/shorter, heavier/lighter)",
@@ -222,7 +220,7 @@ const grade1MathCurriculum = [
     version: 1,
     isActive: true,
     contentSteps: 3,
-    quizCount: 0,
+    quizCount: 3,
     difficultyHint: "foundational",
     topicFocus:
       "Understanding daily time concepts (morning, afternoon, evening) and sequence of events",
@@ -245,7 +243,7 @@ const grade1MathCurriculum = [
     version: 1,
     isActive: true,
     contentSteps: 3,
-    quizCount: 0,
+    quizCount: 3,
     difficultyHint: "foundational",
     topicFocus:
       "Recognizing coins and understanding that money is used to buy things",

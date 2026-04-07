@@ -45,19 +45,67 @@ export type GeneratedLesson = {
 // TTL: 24 hours — after expiry Claude regenerates with fresh
 // examples while staying on the same curriculum angle.
 // ─────────────────────────────────────────────────────────────────
-const REDIS_TTL_SECONDS = 60 * 60 * 24; // 24 hours
+const REDIS_TTL_SECONDS = 60 * 60 * 24;
 
 function buildRedisKey(
   grade: number,
   subjectId: string,
-  topicFocus: string
+  topicFocus: string,
+  version: number
 ): string {
-  const slug = topicFocus
+  const slug = (topicFocus || subjectId)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
-    .slice(0, 50);
-  return `lesson:${grade}:${subjectId}:${slug}`;
+    .slice(0, 40);
+
+  return `lesson:${grade}:${subjectId}:v${version}:${slug}`;
+}
+
+// ── Get the next lesson version for a learner ─────────────────────
+// Call this from the lesson page to know which version to serve.
+// Returns the version number the learner should do next.
+export async function getNextLessonVersion(
+  userId: string,
+  grade: number,
+  subjectId: string
+): Promise<number> {
+  // Find the highest version the learner has PASSED
+  const lastPassed = await prisma.lessonAttempt.findFirst({
+    where: {
+      userId,
+      subjectId,
+      grade,
+      passed: true,
+    },
+    orderBy: { completedAt: "desc" },
+    select: {
+      cache: {
+        select: { promptVersion: true },
+      },
+    },
+  });
+
+  const lastPassedVersion = lastPassed?.cache?.promptVersion ?? 0;
+
+  // Check the next version exists before returning it
+  const nextVersion = lastPassedVersion + 1;
+  const nextPromptExists = await prisma.subjectPrompt.findFirst({
+    where: { subjectId, grade, version: nextVersion, isActive: true },
+    select: { version: true },
+  });
+
+  if (nextPromptExists) return nextVersion;
+
+  // No more new lessons — return the last available version
+  // (learner can replay the hardest one)
+  const lastAvailable = await prisma.subjectPrompt.findFirst({
+    where: { subjectId, grade, isActive: true },
+    orderBy: { version: "desc" },
+    select: { version: true },
+  });
+
+  return lastAvailable?.version ?? 1;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -72,48 +120,50 @@ function buildRedisKey(
 export async function generateLesson(
   grade: number,
   subjectId: string,
+  lessonVersion: number = 1,
   forceRegenerate = false
 ): Promise<{
   lesson: GeneratedLesson;
   fromCache: boolean;
   cacheId: string;
+  version: number;
+  isLastLesson: boolean;
 }> {
-  // Step 1 — load prompt
+  // Load the specific version requested
   const prompt = await prisma.subjectPrompt.findFirst({
-    where: { subjectId, grade, isActive: true },
-    orderBy: { version: "desc" }, // always use the latest version
+    where: { subjectId, grade, version: lessonVersion, isActive: true },
   });
 
   if (!prompt) {
     throw new Error(
-      `No active SubjectPrompt found for grade ${grade}, subject "${subjectId}". ` +
+      `No active prompt for grade ${grade} subject "${subjectId}" version ${lessonVersion}. ` +
         `Run the seed file first.`
     );
   }
 
+  // Check if this is the last lesson in the series
+  const nextPrompt = await prisma.subjectPrompt.findFirst({
+    where: { subjectId, grade, version: lessonVersion + 1, isActive: true },
+    select: { version: true },
+  });
+  const isLastLesson = !nextPrompt;
+
   const redisKey = buildRedisKey(
     grade,
     subjectId,
-    prompt.topicFocus ?? subjectId
+    prompt.topicFocus ?? subjectId,
+    lessonVersion
   );
   const cacheKey = `${grade}:${subjectId}`;
 
-  // Step 2 — Redis cache check
+  // Redis check
   if (!forceRegenerate) {
     const cached = await redis.get(redisKey);
-    console.log(
-      "Redis cached value type:",
-      typeof cached,
-      "Value preview:",
-      String(cached).slice(0, 100)
-    );
-
     if (cached) {
       const dbCache = await prisma.lessonCache.findUnique({
         where: { redisKey },
       });
       if (dbCache) {
-        // Fire-and-forget usage tracking — never block the response
         prisma.lessonCache
           .update({
             where: { id: dbCache.id },
@@ -137,61 +187,92 @@ export async function generateLesson(
           lesson,
           fromCache: true,
           cacheId: dbCache.id,
+          version: lessonVersion,
+          isLastLesson,
         };
       }
     }
   }
 
-  // Step 3 — call Claude with the curated prompts
+  // Generate from Claude
+  console.log(
+    "🔄 Sending request to Claude with model: claude-sonnet-4-20250514"
+  );
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 2000,
     system: prompt.systemPrompt,
     messages: [{ role: "user", content: prompt.userPrompt }],
   });
+  console.log("✅ Claude response received");
 
   const rawText = response.content
     .filter((b) => b.type === "text")
     .map((b) => (b as { type: "text"; text: string }).text)
     .join("");
 
-  // Step 4 — parse + validate
-  let lesson: GeneratedLesson;
+  let raw: Record<string, unknown>;
   try {
-    // Strip accidental markdown fences just in case
     const clean = rawText
       .replace(/^```json\s*/i, "")
       .replace(/^```\s*/i, "")
       .replace(/\s*```$/i, "")
       .trim();
-    lesson = JSON.parse(clean);
+    raw = JSON.parse(clean);
   } catch {
     throw new Error(
-      `Claude returned invalid JSON.\n` +
-        `First 300 chars: ${rawText.slice(0, 300)}`
+      `Claude returned invalid JSON.\nFirst 300 chars: ${rawText.slice(0, 300)}`
     );
   }
 
-  // Basic shape validation — catch prompt regressions early
-  if (!lesson.steps || lesson.steps.length === 0) {
+  // Normalize AI response — handle both schema variants
+  const lesson: GeneratedLesson = {
+    title: (raw.title ?? raw.lesson_title ?? "Lesson") as string,
+    cambridgeStage: ((raw.cambridgeStage ?? raw.curriculum_alignment ?? prompt.cambridgeStage) as string).includes("KS1") ? "KS1" : (raw.cambridgeStage ?? raw.curriculum_alignment ?? prompt.cambridgeStage) as string,
+    subject: (raw.subject ?? subjectId) as string,
+    grade: (raw.grade ?? grade) as number,
+    estimatedMinutes: (raw.estimatedMinutes ?? 10) as number,
+    steps: ((raw.steps ?? []) as Record<string, unknown>[]).map((s) => {
+      const stepType = (s.type ?? s.step_type) as string;
+      if (stepType === "quiz") {
+        return {
+          type: "quiz" as const,
+          question: s.question as string,
+          options: s.options as string[],
+          correctAnswer: (s.correctAnswer ?? s.correct_answer ?? 0) as number,
+          explanation: (s.explanation ?? "") as string,
+          hint: s.hint as string | undefined,
+        };
+      }
+      return {
+        type: "content" as const,
+        title: (s.title ?? "") as string,
+        content: (s.content ?? "") as string,
+        example: (s.example ?? "") as string,
+      };
+    }),
+  };
+
+  // Debug: log the actual response structure
+  console.log("🔍 Claude response structure:", {
+    hasSteps: !!lesson.steps,
+    stepsLength: lesson.steps?.length ?? 0,
+    keys: Object.keys(lesson),
+    firstStep: lesson.steps?.[0] || "no steps",
+  });
+
+  if (!lesson.steps || lesson.steps.length !== 6) {
     throw new Error(
-      `No steps generated. Got ${lesson.steps?.length ?? 0} steps. ` +
-        `Check the system prompt output rules.`
+      `Expected 6 steps, got ${
+        lesson.steps?.length ?? 0
+      }. Check prompt output rules.\nRaw response (first 500 chars): ${rawText.slice(
+        0,
+        500
+      )}`
     );
   }
 
-  // Ensure we have both content and quiz steps
-  const contentSteps = lesson.steps.filter((step) => step.type === "content");
-  const quizSteps = lesson.steps.filter((step) => step.type === "quiz");
-
-  if (contentSteps.length === 0 || quizSteps.length === 0) {
-    throw new Error(
-      `Invalid lesson structure: ${contentSteps.length} content steps, ${quizSteps.length} quiz steps. ` +
-        `Must have at least one of each type.`
-    );
-  }
-
-  // Step 5 — persist to DB (upsert handles re-runs safely)
+  // Persist to DB + Redis
   const dbCache = await prisma.lessonCache.upsert({
     where: { redisKey },
     update: {
@@ -213,10 +294,15 @@ export async function generateLesson(
     },
   });
 
-  // Step 5b — write to Redis with TTL
   await redis.set(redisKey, JSON.stringify(lesson), { ex: REDIS_TTL_SECONDS });
 
-  return { lesson, fromCache: false, cacheId: dbCache.id };
+  return {
+    lesson,
+    fromCache: false,
+    cacheId: dbCache.id,
+    version: lessonVersion,
+    isLastLesson,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -235,6 +321,8 @@ export async function recordLessonAttempt({
   xpEarned,
   answers,
   durationSeconds,
+  model = "claude",
+  promptVersion = 1,
 }: {
   userId: string;
   cacheId: string;
@@ -246,6 +334,8 @@ export async function recordLessonAttempt({
   xpEarned: number;
   answers: { questionIndex: number; selected: number; correct: boolean }[];
   durationSeconds?: number;
+  model?: string;
+  promptVersion?: number;
 }) {
   const passed = score / totalQuestions >= 0.7; // 70% pass threshold
 
@@ -263,6 +353,8 @@ export async function recordLessonAttempt({
         passed,
         answers: JSON.parse(JSON.stringify(answers)),
         durationSeconds,
+        model,
+        promptVersion,
         completedAt: new Date(),
       },
     }),

@@ -150,31 +150,31 @@ model Subscription {
 
 // NEW: The curated prompt template (your IP — admin-created)
 model SubjectPrompt {
-  id            String   @id @default(cuid())
-  subjectId     String   // e.g. "math", "science", "english"
-  subjectName   String   // e.g. "Mathematics"
-  cambridgeStage String  // "KS1" | "KS2" | "KS3" | "IGCSE" | "AS" | "A2"
-  grade         Int      // 1–12 (maps to stage automatically)
-  isActive      Boolean  @default(true)
-  version       Int      @default(1) // bump when you improve a prompt
+  id             String  @id @default(cuid())
+  subjectId      String // e.g. "math", "science", "english"
+  subjectName    String // e.g. "Mathematics"
+  cambridgeStage String // "KS1" | "KS2" | "KS3" | "IGCSE" | "AS" | "A2"
+  grade          Int // 1–12 (maps to stage automatically)
+  isActive       Boolean @default(true)
+  version        Int     @default(1) // bump when you improve a prompt
 
   // The prompt itself
-  systemPrompt  String   // Instructions to Claude on role, tone, format
-  userPrompt    String   // The actual lesson generation instruction
-  
+  systemPrompt String // Instructions to Claude on role, tone, format
+  userPrompt   String // The actual lesson generation instruction
+
   // Lesson shape controls
-  contentSteps  Int      @default(2)  // how many content slides
-  quizCount     Int      @default(3)  // how many quiz questions
+  contentSteps   Int     @default(2) // how many content slides
+  quizCount      Int     @default(3) // how many quiz questions
   difficultyHint String? // "foundational" | "standard" | "extended"
-  topicFocus    String?  // e.g. "fractions", "photosynthesis" — optional override
-  
+  topicFocus     String? // e.g. "fractions", "photosynthesis" — optional override
+
   // Output format instruction (tells Claude exact JSON shape to return)
-  outputSchema  String   // JSON string of the expected lesson structure
+  outputSchema String // JSON string of the expected lesson structure
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  lessonCaches  LessonCache[]
+  lessonCaches LessonCache[]
 
   @@unique([subjectId, grade, version])
   @@map("subject_prompt")
@@ -182,23 +182,28 @@ model SubjectPrompt {
 
 // NEW: Generated lesson stored in DB + keyed in Redis
 model LessonCache {
-  id               String   @id @default(cuid())
-  promptId         String
-  prompt           SubjectPrompt @relation(fields: [promptId], references: [id])
-  
-  // Redis key pattern: "lesson:{grade}:{subjectId}:{seed}"
-  redisKey         String   @unique
-  cacheKey         String   // "{grade}:{subjectId}" for lookups
-  
-  generatedContent Json     // The full AI-generated lesson (content + quiz steps)
-  promptVersion    Int      // Snapshot of which prompt version generated this
-  
-  expiresAt        DateTime?
-  useCount         Int      @default(0)
-  lastUsedAt       DateTime?
-  createdAt        DateTime @default(now())
+  id       String        @id @default(cuid())
+  promptId String
+  prompt   SubjectPrompt @relation(fields: [promptId], references: [id])
 
-  attempts         LessonAttempt[]
+  redisKey String @unique
+  cacheKey String
+
+  generatedContent Json
+  model String @default("claude") // "openai" | "claude" | "gemini"
+  modelVersion     String? // "gpt-4o", "claude-3-opus", etc.
+
+  promptVersion   Int
+  difficultyLevel String? // "easy" | "medium" | "hard"
+
+  qualityScore Float? // system-evaluated later (important)
+
+  expiresAt  DateTime?
+  useCount   Int       @default(0)
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  attempts LessonAttempt[]
 
   @@index([cacheKey])
   @@map("lesson_cache")
@@ -206,61 +211,116 @@ model LessonCache {
 
 // NEW: Every time a student completes or attempts a lesson
 model LessonAttempt {
-  id              String      @id @default(cuid())
-  userId          String
-  cacheId         String
-  cache           LessonCache @relation(fields: [cacheId], references: [id])
-  
-  subjectId       String
-  grade           Int
-  cambridgeStage  String
+  id      String      @id @default(cuid())
+  userId  String
+  cacheId String
+  cache   LessonCache @relation(fields: [cacheId], references: [id])
 
-  score           Int         // correct answers
-  totalQuestions  Int
-  xpEarned        Int         @default(0)
-  passed          Boolean     @default(false)
-  
-  answers         Json        // [{questionIndex, selected, correct}]
+  subjectId      String
+  grade          Int
+  cambridgeStage String
+
+  score          Int
+  totalQuestions Int
+  xpEarned       Int     @default(0)
+  passed         Boolean @default(false)
+
+  answers         Json
   durationSeconds Int?
-  
-  startedAt       DateTime    @default(now())
-  completedAt     DateTime?
+
+  // 🔥 NEW — ADAPTIVE SIGNALS
+  model         String // duplicate for fast querying
+  promptVersion Int
+
+  difficultyLevel String? // snapshot from cache
+  attemptNumber   Int     @default(1)
+
+  improvement     Float? // (current - previous score)
+  confidenceLevel Float? // derived later
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
 
   @@index([userId])
   @@index([userId, subjectId])
+  @@index([subjectId, grade, model]) // 🔥 analytics speed
   @@map("lesson_attempt")
 }
 
 // Full Cambridge learner profile — supports credit transfer
 model LearnerProfile {
-  id              String   @id @default(cuid())
-  userId          String   @unique
+  id     String @id @default(cuid())
+  userId String @unique
 
   // Personal details
-  dateOfBirth     DateTime?
-  nationality     String?
+  dateOfBirth        DateTime?
+  nationality        String?
   countryOfResidence String?
-  firstLanguage   String?
-  gender          String?  // "male" | "female" | "prefer_not_to_say"
+  firstLanguage      String?
+  gender             String? // "male" | "female" | "prefer_not_to_say"
 
   // Cambridge exam registration details
-  centreName      String?  // School / exam centre name
-  centreNumber    String?  // Cambridge-assigned centre number
-  candidateNumber String?  // Assigned at exam registration
-  cambridgeStage  String?  // "KS1" | "KS2" | "KS3" | "IGCSE" | "AS" | "A2"
+  centreName      String? // School / exam centre name
+  centreNumber    String? // Cambridge-assigned centre number
+  candidateNumber String? // Assigned at exam registration
+  cambridgeStage  String? // "KS1" | "KS2" | "KS3" | "IGCSE" | "AS" | "A2"
 
   // Parent / guardian contact
-  guardianName    String?
-  guardianEmail   String?
-  guardianPhone   String?
+  guardianName     String?
+  guardianEmail    String?
+  guardianPhone    String?
   guardianRelation String? // "mother" | "father" | "guardian"
 
   // Credit transfer — previous Cambridge results
-  previousResults Json?    // [{subject, code, grade, year, stage}]
+  previousResults Json? // [{subject, code, grade, year, stage}]
 
-  completedAt     DateTime? // null = profile not yet finished
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  completedAt DateTime? // null = profile not yet finished
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@map("learner_profile")
+}
+
+model ModelPerformance {
+  id        String @id @default(cuid())
+  subjectId String
+  grade     Int
+  model     String
+
+  avgScore    Float
+  attempts    Int
+  successRate Float
+
+  lastUpdated DateTime @updatedAt
+
+  @@unique([subjectId, grade, model])
+  @@map("model_performance")
+}
+
+model UserModelPreference {
+  id        String @id @default(cuid())
+  userId    String
+  subjectId String
+  model     String
+
+  avgScore   Float
+  usageCount Int
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, subjectId, model])
+  @@map("user_model_preference")
+}
+
+model PromptPerformance {
+  id       String @id @default(cuid())
+  promptId String
+  model    String
+
+  avgScore    Float
+  usageCount  Int
+  successRate Float
+
+  @@unique([promptId, model])
+  @@map("prompt_performance")
 }

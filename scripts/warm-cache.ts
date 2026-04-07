@@ -70,8 +70,14 @@ async function generateLessonForWarming(grade: number, subjectId: string) {
 }
 
 const lessons = [
-  { grade: 1, subjectId: "math" },
-  { grade: 2, subjectId: "math" },
+  { grade: 1, subjectId: "counting" },
+  { grade: 1, subjectId: "number-writing" },
+  { grade: 1, subjectId: "addition-basic" },
+  { grade: 1, subjectId: "subtraction-basic" },
+  { grade: 1, subjectId: "shapes-patterns" },
+  { grade: 1, subjectId: "measurement-comparison" },
+  { grade: 1, subjectId: "time-sequencing" },
+  { grade: 1, subjectId: "money-basics" },
 ];
 
 async function warmCache() {

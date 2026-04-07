@@ -46,12 +46,12 @@ const subjectMapping = {
     "7": "time-sequencing",
     "8": "money-basics",
     // Legacy fallback - map "math" to counting for Grade 1
-    "math": "counting",
+    math: "counting",
   },
   // Grade 2 subjects (placeholder - can be added later)
   2: {
     "1": "math", // Keep existing for Grade 2
-    "math": "math", // Direct mapping for Grade 2
+    math: "math", // Direct mapping for Grade 2
   },
   // Add more grades as needed
 };
@@ -926,6 +926,19 @@ export default function LessonPage({
   const progress = ((currentStep + 1) / steps.length) * 100;
   const isQuiz = currentLesson.type === "quiz";
   const isLastStep = currentStep === steps.length - 1;
+
+  // Debug logging
+  console.log("🎯 Lesson Debug:", {
+    currentStep,
+    totalSteps: steps.length,
+    lessonType: currentLesson?.type,
+    ...(currentLesson?.type === "content" && {
+      hasTitle: !!currentLesson.title,
+      hasContent: !!currentLesson.content,
+      contentLength: currentLesson.content?.length,
+      hasExample: !!currentLesson.example,
+    }),
+  });
 
   const handleAnswerSelect = (index: number) => {
     if (showResult) return;
