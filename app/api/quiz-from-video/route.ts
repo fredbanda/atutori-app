@@ -32,9 +32,9 @@ export async function POST(request: NextRequest) {
 
     // Try to get cached quiz first
     const cacheKey = CACHE_KEYS.videoQuiz(mediaId)
-    const cached = await redis.get<QuizQuestion[]>(cacheKey)
+    const cached = await redis.get(cacheKey)
     if (cached) {
-      return NextResponse.json({ questions: cached, fromCache: true })
+      return NextResponse.json({ questions: JSON.parse(cached), fromCache: true })
     }
 
     // Placeholder: Generate quiz questions based on video
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     ]
 
     // Cache quiz for longer since it won't change
-    await redis.set(cacheKey, questions, { ex: CACHE_TTL.long })
+    await redis.set(cacheKey, JSON.stringify(questions), "EX", CACHE_TTL.long)
 
     return NextResponse.json({ 
       questions, 

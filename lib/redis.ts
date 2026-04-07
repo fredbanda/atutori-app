@@ -1,27 +1,14 @@
-import { Redis } from "@upstash/redis";
+import Redis from "ioredis";
 
-function stripQuotes(value?: string) {
-  if (typeof value !== "string") return value;
-  return value.replace(/^['"]|['"]$/g, "");
+const REDIS_URL = process.env.REDIS_URL;
+
+if (!REDIS_URL) {
+  throw new Error("Missing REDIS_URL environment variable");
 }
 
-const rawKvUrl = process.env.KV_REST_API_URL;
-const rawKvToken = process.env.KV_REST_API_TOKEN;
-
-const KV_REST_API_URL = stripQuotes(rawKvUrl);
-const KV_REST_API_TOKEN = stripQuotes(rawKvToken);
-
-if (!KV_REST_API_URL || !KV_REST_API_TOKEN) {
-  throw new Error(
-    `Missing Upstash KV config. KV_REST_API_URL=${String(
-      rawKvUrl
-    )}, KV_REST_API_TOKEN=${String(rawKvToken)}`
-  );
-}
-
-export const redis = new Redis({
-  url: KV_REST_API_URL,
-  token: KV_REST_API_TOKEN,
+export const redis = new Redis(REDIS_URL, {
+  maxRetriesPerRequest: 3,
+  lazyConnect: true,
 });
 
 // Cache keys
@@ -37,36 +24,31 @@ export const CACHE_KEYS = {
 
 // Cache durations in seconds
 export const CACHE_TTL = {
-  user: 60 * 5, // 5 minutes
-  media: 60 * 10, // 10 minutes
-  progress: 60 * 2, // 2 minutes
-  subscription: 60 * 15, // 15 minutes
-  packages: 60 * 60, // 1 hour
-  long: 60 * 60 * 24, // 24 hours
+  user: 60 * 5,
+  media: 60 * 10,
+  progress: 60 * 2,
+  subscription: 60 * 15,
+  packages: 60 * 60,
+  long: 60 * 60 * 24,
 } as const;
 
-// Generic cache helper
 export async function getCached<T>(
   key: string,
   fetcher: () => Promise<T>,
   ttl: number
 ): Promise<T> {
-  const cached = await redis.get<T>(key);
-  if (cached !== null) {
-    return cached;
-  }
+  const cached = await redis.get(key);
+  if (cached !== null) return JSON.parse(cached) as T;
 
   const fresh = await fetcher();
-  await redis.set(key, fresh, { ex: ttl });
+  await redis.set(key, JSON.stringify(fresh), "EX", ttl);
   return fresh;
 }
 
-// Invalidate cache
 export async function invalidateCache(key: string) {
   await redis.del(key);
 }
 
-// Invalidate multiple keys with pattern
 export async function invalidateUserCache(userId: string) {
   const keys = [
     CACHE_KEYS.user(userId),
@@ -75,4 +57,3 @@ export async function invalidateUserCache(userId: string) {
   ];
   await Promise.all(keys.map((key) => redis.del(key)));
 }
-

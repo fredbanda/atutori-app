@@ -5,9 +5,8 @@ import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-const sql = neon(process.env.DATABASE_URL!);
-
 export async function GET() {
+  const sql = neon(process.env.DATABASE_URL!);
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.id) {

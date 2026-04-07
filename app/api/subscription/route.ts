@@ -4,10 +4,9 @@ import { auth } from "@/lib/auth"
 import { redis, CACHE_KEYS, CACHE_TTL } from "@/lib/redis"
 import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.DATABASE_URL!)
-
 export async function GET() {
   try {
+    const sql = neon(process.env.DATABASE_URL!)
     const session = await auth.api.getSession({
       headers: await headers(),
     })
@@ -22,7 +21,7 @@ export async function GET() {
     const cacheKey = CACHE_KEYS.subscription(userId)
     const cached = await redis.get(cacheKey)
     if (cached) {
-      return NextResponse.json({ subscription: cached, fromCache: true })
+      return NextResponse.json({ subscription: JSON.parse(cached), fromCache: true })
     }
 
     // Fetch from database
@@ -48,7 +47,7 @@ export async function GET() {
 
     // Cache the result
     if (subscription) {
-      await redis.set(cacheKey, subscription, { ex: CACHE_TTL.media })
+      await redis.set(cacheKey, JSON.stringify(subscription), "EX", CACHE_TTL.subscription)
     }
 
     return NextResponse.json({ subscription, fromCache: false })

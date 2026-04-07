@@ -4,10 +4,9 @@ import { auth } from "@/lib/auth"
 import { redis, CACHE_KEYS } from "@/lib/redis"
 import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.DATABASE_URL!)
-
 export async function POST(request: NextRequest) {
   try {
+    const sql = neon(process.env.DATABASE_URL!)
     const session = await auth.api.getSession({
       headers: await headers(),
     })
