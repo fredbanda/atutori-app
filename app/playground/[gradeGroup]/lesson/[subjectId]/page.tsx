@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use, useEffect } from "react";
+import { useState, use, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import {
   type GeneratedLesson,
   type QuizStep,
 } from "@/lib/generate-lesson";
+import { preloadLessonAudio } from "@/lib/actions/voice";
 import {
   ArrowLeft,
   ArrowRight,
@@ -19,12 +20,25 @@ import {
   Star,
   Lightbulb,
   Volume2,
+  VolumeX,
   Loader2,
   Brain,
   Sparkles,
+  Mic,
+  Hand,
 } from "lucide-react";
 
-// Grade Group to Grade Number mapping
+// Voice-enabled grade groups (Grades 1–3)
+const VOICE_GRADE_GROUPS = new Set(["primary-early"])
+
+function playBase64Audio(base64: string): Promise<void> {
+  return new Promise((resolve) => {
+    const audio = new Audio(`data:audio/mp3;base64,${base64}`)
+    audio.onended = () => resolve()
+    audio.onerror = () => resolve()
+    audio.play().catch(() => resolve())
+  })
+}
 const gradeGroupToGrade = {
   "primary-early": [1, 2, 3],
   "primary-mid": [4, 5, 6],
@@ -788,6 +802,15 @@ export default function LessonPage({
   const [lesson, setLesson] = useState<GeneratedLesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cacheId, setCacheId] = useState<string>("");
+  const [startedAt] = useState(() => Date.now());
+
+  // Voice state
+  const isVoiceEnabled = VOICE_GRADE_GROUPS.has(gradeGroup);
+  const [voiceReady, setVoiceReady] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceMuted, setVoiceMuted] = useState(false);
+  const audioRef = useRef<{ contentAudio: any[]; quizAudio: any[] } | null>(null);
 
   // Lesson progress state
   const [currentStep, setCurrentStep] = useState(0);
@@ -812,6 +835,17 @@ export default function LessonPage({
 
         const result = await generateLesson(grade, actualSubjectId);
         setLesson(result.lesson);
+        setCacheId(result.cacheId);
+
+        // Preload all audio in background for voice-enabled grades
+        if (isVoiceEnabled) {
+          preloadLessonAudio(result.lesson.steps)
+            .then((audio) => {
+              audioRef.current = audio;
+              setVoiceReady(true);
+            })
+            .catch(() => setVoiceReady(false));
+        }
 
         // Optional: Show cache status in dev mode
         if (process.env.NODE_ENV === "development") {
@@ -862,6 +896,51 @@ export default function LessonPage({
 
     loadLesson();
   }, [gradeGroup, subjectId]);
+
+  // Auto-play voice when step changes and audio is ready
+  const speakStep = useCallback(async (stepIndex: number) => {
+    if (!voiceReady || voiceMuted || !audioRef.current) return;
+    const step = lesson?.steps[stepIndex];
+    if (!step) return;
+
+    setIsSpeaking(true);
+    try {
+      if (step.type === "content") {
+        const ca = audioRef.current.contentAudio.find((a: any) => a.stepIndex === stepIndex);
+        if (ca?.voiceScriptAudio) await playBase64Audio(ca.voiceScriptAudio);
+        if (ca?.activityAudio) {
+          await new Promise((r) => setTimeout(r, 400));
+          await playBase64Audio(ca.activityAudio);
+        }
+        if (ca?.repeatAfterMeClips?.length > 0) {
+          for (const clip of ca.repeatAfterMeClips) {
+            await new Promise((r) => setTimeout(r, 300));
+            await playBase64Audio(clip.audio);
+            await new Promise((r) => setTimeout(r, 1500)); // pause for child to echo
+          }
+        }
+      } else {
+        const qa = audioRef.current.quizAudio.find((a: any) => a.stepIndex === stepIndex);
+        if (qa?.voicePromptAudio) await playBase64Audio(qa.voicePromptAudio);
+      }
+    } finally {
+      setIsSpeaking(false);
+    }
+  }, [voiceReady, voiceMuted, lesson]);
+
+  const speakExplanation = useCallback(async (stepIndex: number) => {
+    if (!voiceReady || voiceMuted || !audioRef.current) return;
+    const qa = audioRef.current.quizAudio.find((a: any) => a.stepIndex === stepIndex);
+    if (qa?.voiceExplanationAudio) {
+      setIsSpeaking(true);
+      await playBase64Audio(qa.voiceExplanationAudio).finally(() => setIsSpeaking(false));
+    }
+  }, [voiceReady, voiceMuted]);
+
+  useEffect(() => {
+    if (voiceReady && lesson) speakStep(currentStep);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voiceReady, currentStep]);
 
   // Loading state
   if (loading) {
@@ -924,21 +1003,9 @@ export default function LessonPage({
   const steps = lesson.steps;
   const currentLesson = steps[currentStep];
   const progress = ((currentStep + 1) / steps.length) * 100;
-  const isQuiz = currentLesson.type === "quiz";
   const isLastStep = currentStep === steps.length - 1;
-
-  // Debug logging
-  console.log("🎯 Lesson Debug:", {
-    currentStep,
-    totalSteps: steps.length,
-    lessonType: currentLesson?.type,
-    ...(currentLesson?.type === "content" && {
-      hasTitle: !!currentLesson.title,
-      hasContent: !!currentLesson.content,
-      contentLength: currentLesson.content?.length,
-      hasExample: !!currentLesson.example,
-    }),
-  });
+  // extra fields Claude returns (not in base type)
+  const extra = currentLesson as Record<string, unknown>;
 
   const handleAnswerSelect = (index: number) => {
     if (showResult) return;
@@ -948,14 +1015,11 @@ export default function LessonPage({
   const handleCheckAnswer = () => {
     if (selectedAnswer === null) return;
     setShowResult(true);
-
-    if (
-      currentLesson.type === "quiz" &&
-      selectedAnswer === currentLesson.correctAnswer
-    ) {
+    if (currentLesson.type === "quiz" && selectedAnswer === currentLesson.correctAnswer) {
       setCorrectAnswers((prev) => prev + 1);
       setXpEarned((prev) => prev + 10);
     }
+    speakExplanation(currentStep);
   };
 
   const handleNext = () => {
@@ -964,7 +1028,7 @@ export default function LessonPage({
       router.push(
         `/playground/${gradeGroup}/lesson/${subjectId}/results?correct=${correctAnswers}&total=${
           steps.filter((l) => l.type === "quiz").length
-        }&xp=${xpEarned}`
+        }&xp=${xpEarned}&cacheId=${cacheId}&duration=${Math.round((Date.now() - startedAt) / 1000)}`
       );
     } else {
       setCurrentStep((prev) => prev + 1);
@@ -994,9 +1058,25 @@ export default function LessonPage({
                 {lesson.estimatedMinutes} min
               </p>
             </div>
-            <div className="flex items-center gap-2 text-amber-500">
-              <Star className="h-5 w-5 fill-current" />
-              <span className="font-bold">+{xpEarned} XP</span>
+            <div className="flex items-center gap-2">
+              {isVoiceEnabled && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (isSpeaking) return;
+                    setVoiceMuted((m) => !m);
+                  }}
+                  className="text-muted-foreground"
+                  title={voiceMuted ? "Unmute voice" : "Mute voice"}
+                >
+                  {voiceMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                </Button>
+              )}
+              <div className="flex items-center gap-2 text-amber-500">
+                <Star className="h-5 w-5 fill-current" />
+                <span className="font-bold">+{xpEarned} XP</span>
+              </div>
             </div>
           </div>
           <Progress value={progress} className="h-2" />
@@ -1009,8 +1089,15 @@ export default function LessonPage({
       {/* Main Content */}
       <main className="max-w-3xl mx-auto px-4 py-8">
         {currentLesson.type === "content" ? (
-          /* Content View */
           <Card className="p-8">
+            {/* Speaking indicator */}
+            {isSpeaking && (
+              <div className="flex items-center gap-2 text-primary mb-4 text-sm">
+                <Volume2 className="h-4 w-4 animate-pulse" />
+                <span>Listening...</span>
+              </div>
+            )}
+
             <h2 className="text-2xl font-bold text-foreground mb-6">
               {currentLesson.title}
             </h2>
@@ -1020,21 +1107,56 @@ export default function LessonPage({
             </p>
 
             {currentLesson.example && (
-              <div className="bg-primary/10 rounded-xl p-6 mb-8">
+              <div className="bg-primary/10 rounded-xl p-6 mb-4">
                 <div className="flex items-center gap-2 text-primary mb-3">
                   <Lightbulb className="h-5 w-5" />
                   <span className="font-semibold">Example</span>
                 </div>
-                <p className="text-foreground font-medium">
-                  {currentLesson.example}
+                <p className="text-foreground font-medium">{currentLesson.example}</p>
+              </div>
+            )}
+
+            {/* Activity prompt — shown for all subjects */}
+            {extra.activityPrompt && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-4">
+                <div className="flex items-center gap-2 text-amber-700 mb-2">
+                  <Hand className="h-5 w-5" />
+                  <span className="font-semibold">Try it now!</span>
+                </div>
+                <p className="text-amber-900 font-medium">{extra.activityPrompt as string}</p>
+              </div>
+            )}
+
+            {/* Subject-specific fact */}
+            {(extra.scienceFact ?? extra.musicFact ?? extra.codingFact ?? extra.worldFact) && (
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-5 mb-6">
+                <div className="flex items-center gap-2 text-purple-700 mb-2">
+                  <Sparkles className="h-4 w-4" />
+                  <span className="font-semibold">Wow fact! 🤩</span>
+                </div>
+                <p className="text-purple-900 text-sm">
+                  {(extra.scienceFact ?? extra.musicFact ?? extra.codingFact ?? extra.worldFact) as string}
                 </p>
               </div>
             )}
 
-            <Button size="lg" className="w-full" onClick={handleNext}>
-              {isLastStep ? "Complete Lesson" : "Continue"}
-              <ArrowRight className="h-5 w-5 ml-2" />
-            </Button>
+            <div className="flex gap-3">
+              {isVoiceEnabled && voiceReady && (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => speakStep(currentStep)}
+                  disabled={isSpeaking}
+                  className="flex-shrink-0"
+                >
+                  <Volume2 className="h-5 w-5" />
+                </Button>
+              )}
+              <Button size="lg" className="w-full" onClick={handleNext}>
+                {isLastStep ? "Complete Lesson" : "Continue"}
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </Button>
+            </div>
           </Card>
         ) : (
           /* Quiz View */
@@ -1042,6 +1164,12 @@ export default function LessonPage({
             const quizStep = currentLesson as QuizStep;
             return (
               <Card className="p-8">
+                {isSpeaking && (
+                  <div className="flex items-center gap-2 text-primary mb-4 text-sm">
+                    <Volume2 className="h-4 w-4 animate-pulse" />
+                    <span>Listening...</span>
+                  </div>
+                )}
                 <h2 className="text-2xl font-bold text-foreground mb-8 text-center">
                   {quizStep.question}
                 </h2>
@@ -1112,14 +1240,27 @@ export default function LessonPage({
                 )}
 
                 {!showResult ? (
-                  <Button
-                    size="lg"
-                    className="w-full"
-                    onClick={handleCheckAnswer}
-                    disabled={selectedAnswer === null}
-                  >
-                    Check Answer
-                  </Button>
+                  <div className="flex gap-3">
+                    {isVoiceEnabled && voiceReady && (
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        onClick={() => speakStep(currentStep)}
+                        disabled={isSpeaking}
+                        className="flex-shrink-0"
+                      >
+                        <Volume2 className="h-5 w-5" />
+                      </Button>
+                    )}
+                    <Button
+                      size="lg"
+                      className="w-full"
+                      onClick={handleCheckAnswer}
+                      disabled={selectedAnswer === null}
+                    >
+                      Check Answer
+                    </Button>
+                  </div>
                 ) : (
                   <Button size="lg" className="w-full" onClick={handleNext}>
                     {isLastStep ? "See Results" : "Continue"}

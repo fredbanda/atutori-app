@@ -2,15 +2,14 @@ import { NextResponse } from "next/server"
 import { redis, CACHE_TTL } from "@/lib/redis"
 import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.DATABASE_URL!)
-
 export async function GET() {
   try {
+    const sql = neon(process.env.DATABASE_URL!)
     // Try cache first
     const cacheKey = "packages:all"
     const cached = await redis.get(cacheKey)
     if (cached) {
-      return NextResponse.json({ packages: cached, fromCache: true })
+      return NextResponse.json({ packages: JSON.parse(cached), fromCache: true })
     }
 
     // Fetch from database
@@ -30,7 +29,7 @@ export async function GET() {
     `
 
     // Cache for longer since packages don't change often
-    await redis.set(cacheKey, packages, { ex: CACHE_TTL.LONG })
+    await redis.set(cacheKey, JSON.stringify(packages), "EX", CACHE_TTL.packages)
 
     return NextResponse.json({ packages, fromCache: false })
   } catch (error) {

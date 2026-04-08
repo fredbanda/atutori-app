@@ -4,9 +4,8 @@ import { auth } from "@/lib/auth"
 import { redis, CACHE_KEYS, CACHE_TTL } from "@/lib/redis"
 import { neon } from "@neondatabase/serverless"
 
-const sql = neon(process.env.DATABASE_URL!)
-
 export async function GET() {
+  const sql = neon(process.env.DATABASE_URL!)
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -22,7 +21,7 @@ export async function GET() {
     const cacheKey = CACHE_KEYS.userMedia(userId)
     const cached = await redis.get(cacheKey)
     if (cached) {
-      return NextResponse.json({ media: cached, fromCache: true })
+      return NextResponse.json({ media: JSON.parse(cached), fromCache: true })
     }
 
     // Fetch assigned media for this student
@@ -49,7 +48,7 @@ export async function GET() {
     `
 
     // Cache for 5 minutes
-    await redis.set(cacheKey, media, { ex: CACHE_TTL.media })
+    await redis.set(cacheKey, JSON.stringify(media), "EX", CACHE_TTL.media)
 
     return NextResponse.json({ media, fromCache: false })
   } catch (error) {

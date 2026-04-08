@@ -294,7 +294,7 @@ export async function generateLesson(
     },
   });
 
-  await redis.set(redisKey, JSON.stringify(lesson), { ex: REDIS_TTL_SECONDS });
+  await redis.set(redisKey, JSON.stringify(lesson), "EX", REDIS_TTL_SECONDS);
 
   return {
     lesson,

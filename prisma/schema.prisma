@@ -324,3 +324,13 @@ model PromptPerformance {
   @@unique([promptId, model])
   @@map("prompt_performance")
 }
+
+model AudioCache {
+  id        String   @id @default(cuid())
+  text      String   @unique
+  voice     String   // "child_friendly_1"
+  audioUrl  String   // stored in S3 / CDN
+  createdAt DateTime @default(now())
+
+  @@map("audio_cache")
+}

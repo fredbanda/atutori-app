@@ -3,10 +3,9 @@ import { headers } from "next/headers"
 import { neon } from "@neondatabase/serverless"
 import { NextResponse } from "next/server"
 
-const sql = neon(process.env.DATABASE_URL!)
-
 export async function POST(request: Request) {
   try {
+    const sql = neon(process.env.DATABASE_URL!)
     const session = await auth.api.getSession({
       headers: await headers(),
     })

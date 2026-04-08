@@ -6,14 +6,10 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import { PrismaClient } from "@prisma/client";
-import { Redis } from "@upstash/redis";
+import Redis from "ioredis";
 
-// Simple clients for warming
-const prisma = new PrismaClient({
-  log: ["error"],
-});
-
-const redis = Redis.fromEnv();
+const prisma = new PrismaClient({ log: ["error"] });
+const redis = new Redis(process.env.REDIS_URL!);
 
 // Mock lesson generation (replace with actual AI call when API key is valid)
 async function generateMockLesson(grade: number, subjectId: string) {
@@ -92,7 +88,7 @@ async function generateMockLesson(grade: number, subjectId: string) {
     .slice(0, 50);
   const redisKey = `lesson:${grade}:${subjectId}:${slug}`;
 
-  await redis.set(redisKey, JSON.stringify(mockLesson), { ex: 60 * 60 * 24 });
+  await redis.set(redisKey, JSON.stringify(mockLesson), "EX", 60 * 60 * 24);
 
   return { lesson: mockLesson, redisKey, prompt };
 }

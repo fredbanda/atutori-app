@@ -27,7 +27,7 @@ interface SubjectNavProps {
 const subjectsByGrade: Record<string, { id: string; name: string; icon: React.ReactNode; color: string; bgColor: string }[]> = {
   "primary-early": [
     { id: "math", name: "Numbers", icon: <Calculator className="h-4 w-4" />, color: "text-blue-600", bgColor: "bg-blue-100" },
-    { id: "reading", name: "Stories", icon: <BookOpen className="h-4 w-4" />, color: "text-green-600", bgColor: "bg-green-100" },
+    { id: "english", name: "English", icon: <BookOpen className="h-4 w-4" />, color: "text-green-600", bgColor: "bg-green-100" },
     { id: "art", name: "Art", icon: <Palette className="h-4 w-4" />, color: "text-pink-600", bgColor: "bg-pink-100" },
     { id: "music", name: "Music", icon: <Music className="h-4 w-4" />, color: "text-purple-600", bgColor: "bg-purple-100" },
     { id: "science", name: "Discovery", icon: <FlaskConical className="h-4 w-4" />, color: "text-teal-600", bgColor: "bg-teal-100" },
