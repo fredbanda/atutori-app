@@ -35,6 +35,12 @@ const OUTPUT_SCHEMA = JSON.stringify(
           "string — 2 to 3 simple sentences. Use everyday objects a 5-year-old loves. Keep sentences short. Be enthusiastic!",
         example:
           "string — one vivid, concrete example using emojis e.g. '🍎🍎🍎 — that is 3 apples!'",
+        voiceScript:
+          "string — what TTS speaks aloud. Warm, slow, encouraging. Written for listening not reading. Use '...' for natural pauses. Never mention emoji names — describe them instead.",
+        repeatAfterMe: [
+          "string — first word or phrase the child echoes back",
+          "string — second (max 4 items per step)",
+        ],
       },
       {
         type: "quiz",
@@ -50,6 +56,13 @@ const OUTPUT_SCHEMA = JSON.stringify(
         explanation:
           "string — warm celebration + clear reason. Start with 'Amazing! 🎉' or 'You got it! ⭐' etc.",
         hint: "string — gentle nudge if they get it wrong, e.g. 'Try counting each one slowly! 👆'",
+        voicePrompt:
+          "string — what TTS says to introduce this question. Encouraging and direct.",
+        listenFor: [
+          "string — accepted spoken answer e.g. 'three', '3', 'the number three'",
+        ],
+        voiceExplanation:
+          "string — spoken version of the explanation, warmer and slower than display text.",
       },
     ],
   },
@@ -95,7 +108,12 @@ Output rules — STRICTLY enforced:
 - Match the exact schema provided in the user message — every field, every type, no extras.
 - estimatedMinutes must be 10
 - cambridgeStage must be "KS1"
-- steps array must have exactly 6 items: 3 content steps then 3 quiz steps, in that order`;
+- steps array must have exactly 6 items: 3 content steps then 3 quiz steps, in that order
+- voiceScript on every content step — written for speaking, warm and slow, with '...' pauses
+- repeatAfterMe on every content step — 2 to 4 short items the child echoes back
+- voicePrompt on every quiz step — introduces the question in a warm encouraging way
+- listenFor on every quiz step — at least 2 accepted spoken answer variations
+- voiceExplanation on every quiz step — spoken celebration, warmer than display text`;
 
 // ─────────────────────────────────────────────────────────────────
 // USER PROMPT BUILDER

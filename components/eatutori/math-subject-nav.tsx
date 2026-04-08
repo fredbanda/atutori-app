@@ -124,9 +124,9 @@ export function MathSubjectNav({
           </h2>
           <div className="flex flex-wrap gap-2">
             {grade1MathSubjects.map((subject) => {
-              const isActive = currentSubjectId === subject.id;
-              const isCompleted = completedSubjects.includes(subject.id);
-              const href = `/playground/${gradeGroup}/lesson/${subject.id}`;
+              const isActive = currentSubjectId === subject.actualId;
+              const isCompleted = completedSubjects.includes(subject.actualId);
+              const href = `/playground/${gradeGroup}/lesson/${subject.actualId}`;
 
               return (
                 <Link key={subject.id} href={href} className="flex-shrink-0">

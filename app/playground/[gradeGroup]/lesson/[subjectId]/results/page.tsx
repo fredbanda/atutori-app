@@ -4,6 +4,8 @@ import { use, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { recordLessonAttempt } from "@/lib/generate-lesson";
+import { useSession } from "@/lib/auth-client";
 import {
   ArrowRight,
   RotateCcw,
@@ -102,13 +104,34 @@ export default function ResultsPage({
   const { gradeGroup, subjectId } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
 
   const correct = parseInt(searchParams.get("correct") ?? "0");
   const total = parseInt(searchParams.get("total") ?? "3");
   const xpEarned = parseInt(searchParams.get("xp") ?? "0");
+  const cacheId = searchParams.get("cacheId") ?? "";
+  const duration = parseInt(searchParams.get("duration") ?? "0");
 
-  // Fake a running total — replace with real user XP from session
-  const totalXp = xpEarned + 40; // TODO: replace 40 with user.xp from DB
+  // Record attempt once on mount
+  useEffect(() => {
+    if (!session?.user?.id || !cacheId) return;
+    recordLessonAttempt({
+      userId: session.user.id,
+      cacheId,
+      subjectId,
+      grade: gradeGroup === "primary-early" ? 1 : gradeGroup === "primary-mid" ? 4 : 7,
+      cambridgeStage: "KS1",
+      score: correct,
+      totalQuestions: total,
+      xpEarned,
+      answers: [],
+      durationSeconds: duration || undefined,
+    }).catch(console.error);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Use real XP from session + earned this lesson
+  const totalXp = (session?.user as { xp?: number })?.xp ?? xpEarned;
   const { level, progress: levelProgress } = getLevelFromXp(totalXp);
 
   const rating = getRating(correct, total);
