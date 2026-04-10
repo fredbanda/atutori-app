@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -31,6 +31,9 @@ import {
 
 // Voice lesson hook for recording and talk-back
 import { useVoiceLesson } from "@/hooks/use-voice-lesson";
+
+// Card-based lesson renderer
+import CardLessonRenderer from "@/components/eatutori/CardLessonRenderer";
 
 // Gemini Live Integration (conditionally imported)
 import dynamic from "next/dynamic";
@@ -865,6 +868,26 @@ export default function LessonPage({
   const [cacheId, setCacheId] = useState<string>("");
   const [startedAt] = useState(() => Date.now());
 
+  // Card-based learning state
+  const [useCardBasedLearning, setUseCardBasedLearning] = useState(false);
+  const [showCardModeToggle, setShowCardModeToggle] = useState(false);
+
+  // Check if subject supports card-based learning
+  const supportsCardLearning = () => {
+    const grade = getGradeFromGroup(gradeGroup);
+    const cardSupportedSubjects = [
+      "math",
+      "counting",
+      "number-writing",
+      "addition-basic",
+      "english",
+      "phonics",
+      "letters",
+      "reading",
+    ];
+    return grade <= 3 && cardSupportedSubjects.includes(subjectId);
+  };
+
   // Voice state (used for fallback when Gemini Live not available)
   const [voiceReady, setVoiceReady] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -972,6 +995,24 @@ export default function LessonPage({
     }
 
     loadLesson();
+  }, [gradeGroup, subjectId]);
+
+  // Check if card-based learning should be offered
+  useEffect(() => {
+    if (supportsCardLearning()) {
+      setShowCardModeToggle(true);
+      // Auto-enable for Grade 1 math and english
+      const grade = getGradeFromGroup(gradeGroup);
+      if (
+        grade === 1 &&
+        (subjectId === "math" ||
+          subjectId === "english" ||
+          subjectId === "counting" ||
+          subjectId === "phonics")
+      ) {
+        setUseCardBasedLearning(true);
+      }
+    }
   }, [gradeGroup, subjectId]);
 
   // Auto-play voice when step changes and audio is ready
@@ -1247,6 +1288,23 @@ export default function LessonPage({
                   </Button>
                 </>
               )}
+
+              {/* Card Mode Toggle */}
+              {showCardModeToggle && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setUseCardBasedLearning(!useCardBasedLearning)}
+                  className="text-xs"
+                  title={
+                    useCardBasedLearning
+                      ? "Switch to Standard Lesson"
+                      : "Switch to Interactive Cards"
+                  }
+                >
+                  {useCardBasedLearning ? "📄 Standard" : "🎴 Cards"}
+                </Button>
+              )}
               <div className="flex items-center gap-2 text-amber-500">
                 <Star className="h-5 w-5 fill-current" />
                 <span className="font-bold">+{xpEarned} XP</span>
@@ -1317,8 +1375,27 @@ export default function LessonPage({
           </div>
         )}
 
-        {/* Lesson Content (both modes) */}
-        {!isGeminiLiveMode && (
+        {/* Card-Based Learning Mode */}
+        {!isGeminiLiveMode && useCardBasedLearning && (
+          <CardLessonRenderer
+            grade={getGradeFromGroup(gradeGroup) as 1 | 2 | 3}
+            subjectId={subjectId}
+            onComplete={() => {
+              // Award XP for completing card lesson
+              setXpEarned((prev) => prev + 50);
+              // Move to results or next lesson
+              router.push(
+                `/playground/${gradeGroup}/lesson/${subjectId}/results?xp=${
+                  xpEarned + 50
+                }&card=true`
+              );
+            }}
+            onBack={handleBack}
+          />
+        )}
+
+        {/* Standard Lesson Content (when cards are disabled) */}
+        {!isGeminiLiveMode && !useCardBasedLearning && (
           <>
             {currentLesson.type === "content" ? (
               <Card className="p-8">
