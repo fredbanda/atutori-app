@@ -1015,6 +1015,21 @@ export default function LessonPage({
     }
   }, [gradeGroup, subjectId]);
 
+  // Smooth mode switching with visual feedback
+  const handleModeSwitch = useCallback(() => {
+    const newMode = !useCardBasedLearning;
+    setUseCardBasedLearning(newMode);
+
+    // Visual feedback for mode switching
+    if (newMode) {
+      // Switching to card mode
+      console.log("🎴 Switching to Interactive Cards Mode!");
+    } else {
+      // Switching to standard mode
+      console.log("📄 Switching to Standard Lesson Mode!");
+    }
+  }, [useCardBasedLearning]);
+
   // Auto-play voice when step changes and audio is ready
   const speakStep = useCallback(
     async (stepIndex: number) => {
@@ -1292,17 +1307,32 @@ export default function LessonPage({
               {/* Card Mode Toggle */}
               {showCardModeToggle && (
                 <Button
-                  variant="outline"
+                  variant={useCardBasedLearning ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setUseCardBasedLearning(!useCardBasedLearning)}
-                  className="text-xs"
+                  onClick={handleModeSwitch}
+                  className={`text-xs font-medium transition-all ${
+                    useCardBasedLearning
+                      ? "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-md"
+                      : "border-blue-300 text-blue-700 hover:bg-blue-50"
+                  }`}
                   title={
                     useCardBasedLearning
                       ? "Switch to Standard Lesson"
-                      : "Switch to Interactive Cards"
+                      : "🌟 Try Interactive Cards Mode!"
                   }
                 >
-                  {useCardBasedLearning ? "📄 Standard" : "🎴 Cards"}
+                  {useCardBasedLearning ? (
+                    <>
+                      <span className="mr-1">📄</span>
+                      Standard
+                    </>
+                  ) : (
+                    <>
+                      <span className="mr-1">🎴</span>
+                      Cards
+                      <span className="ml-1 text-xs opacity-80">✨</span>
+                    </>
+                  )}
                 </Button>
               )}
               <div className="flex items-center gap-2 text-amber-500">
@@ -1377,21 +1407,71 @@ export default function LessonPage({
 
         {/* Card-Based Learning Mode */}
         {!isGeminiLiveMode && useCardBasedLearning && (
-          <CardLessonRenderer
-            grade={getGradeFromGroup(gradeGroup) as 1 | 2 | 3}
-            subjectId={subjectId}
-            onComplete={() => {
-              // Award XP for completing card lesson
-              setXpEarned((prev) => prev + 50);
-              // Move to results or next lesson
-              router.push(
-                `/playground/${gradeGroup}/lesson/${subjectId}/results?xp=${
-                  xpEarned + 50
-                }&card=true`
-              );
-            }}
-            onBack={handleBack}
-          />
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <Button
+                  variant="outline"
+                  onClick={handleModeSwitch}
+                  className="text-sm"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Standard Lesson
+                </Button>
+                <div className="text-center">
+                  <h1 className="text-2xl font-bold text-foreground mb-1">
+                    🎴 Interactive Cards Mode
+                  </h1>
+                  <p className="text-sm text-muted-foreground">
+                    {lesson?.title} • Grade {getGradeFromGroup(gradeGroup)} •{" "}
+                    {subjectId}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBack}
+                  className="text-xs"
+                >
+                  Exit Lesson
+                </Button>
+              </div>
+
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                  <span className="text-blue-700 font-medium">
+                    🎯 Multi-Sensory Learning Active
+                  </span>
+                  <span className="text-blue-600 text-sm">
+                    (See → Hear → Say → Trace → Master)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <CardLessonRenderer
+              grade={getGradeFromGroup(gradeGroup) as 1 | 2 | 3}
+              subjectId={subjectId}
+              onComplete={() => {
+                // Award XP for completing card lesson
+                setXpEarned((prev) => prev + 50);
+                // Show completion celebration
+                alert(
+                  `🎉 Amazing work! You've mastered ${subjectId} cards! +50 XP earned!`
+                );
+                // Move to results or next lesson
+                router.push(
+                  `/playground/${gradeGroup}/lesson/${subjectId}/results?correct=${correctAnswers}&total=${
+                    lesson?.steps.filter((l) => l.type === "quiz").length || 1
+                  }&xp=${xpEarned + 50}&card=true&duration=${Math.round(
+                    (Date.now() - startedAt) / 1000
+                  )}`
+                );
+              }}
+              onBack={handleModeSwitch}
+            />
+          </div>
         )}
 
         {/* Standard Lesson Content (when cards are disabled) */}
