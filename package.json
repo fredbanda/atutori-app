@@ -20,7 +20,15 @@
     "db:seed-world": "tsx seeds/seed-ks1-world-grade1.ts",
     "db:verify": "tsx scripts/verify-seed.ts",
     "warm-cache": "tsx scripts/warm-cache.ts",
-    "warm-cache-demo": "tsx scripts/warm-cache-demo.ts"
+    "warm-cache-demo": "tsx scripts/warm-cache-demo.ts",
+    "health-check": "tsx scripts/health-check.ts",
+    "load-test:smoke": "tsx scripts/load-test-voice.ts smoke",
+    "load-test:moderate": "tsx scripts/load-test-voice.ts moderate",
+    "load-test:heavy": "tsx scripts/load-test-voice.ts heavy",
+    "load-test:stress": "tsx scripts/load-test-voice.ts stress",
+    "production:health": "NODE_ENV=production tsx scripts/health-check.ts",
+    "production:deploy": "npm run health-check && npm run build",
+    "production:monitor": "tsx scripts/health-check.ts && open http://localhost:3000/admin/voice-health"
   },
   "prisma": {
     "seed": "tsx seeds/ks1-math.ts"
@@ -28,6 +36,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.82.0",
     "@google-cloud/text-to-speech": "^6.4.0",
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.9.1",
     "@neondatabase/serverless": "^0.10.4",
     "@prisma/adapter-neon": "^6.19.3",
@@ -102,3 +111,4 @@
     "typescript": "5.7.3"
   }
 }
+

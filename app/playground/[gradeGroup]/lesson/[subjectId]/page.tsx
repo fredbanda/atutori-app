@@ -26,18 +26,61 @@ import {
   Sparkles,
   Mic,
   Hand,
+  MicOff,
 } from "lucide-react";
 
+// Voice lesson hook for recording and talk-back
+import { useVoiceLesson } from "@/hooks/use-voice-lesson";
+
+// Gemini Live Integration (conditionally imported)
+import dynamic from "next/dynamic";
+
+const GeminiLiveSession = dynamic(
+  () =>
+    import("@/components/voice/GeminiLiveSession").then((mod) => ({
+      default: mod.GeminiLiveSession,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-6">
+        <div className="flex items-center gap-3">
+          <Loader2 className="h-5 w-5 animate-spin text-purple-600" />
+          <span className="text-purple-700 font-medium">
+            Starting Gemini Live Tutor...
+          </span>
+        </div>
+      </div>
+    ),
+  }
+);
+
 // Voice-enabled grade groups (Grades 1–3)
-const VOICE_GRADE_GROUPS = new Set(["primary-early"])
+const VOICE_GRADE_GROUPS = new Set(["primary-early"]);
 
 function playBase64Audio(base64: string): Promise<void> {
   return new Promise((resolve) => {
-    const audio = new Audio(`data:audio/mp3;base64,${base64}`)
-    audio.onended = () => resolve()
-    audio.onerror = () => resolve()
-    audio.play().catch(() => resolve())
-  })
+    // Check if this needs browser TTS fallback
+    if (base64.startsWith("browser_tts:")) {
+      // Use browser speech synthesis
+      const text = base64.replace("browser_tts:", "");
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.85;
+      utterance.pitch = 1.1;
+      utterance.volume = 0.8;
+
+      utterance.onend = () => resolve();
+      utterance.onerror = () => resolve();
+
+      speechSynthesis.speak(utterance);
+    } else {
+      // Use base64 audio
+      const audio = new Audio(`data:audio/mp3;base64,${base64}`);
+      audio.onended = () => resolve();
+      audio.onerror = () => resolve();
+      audio.play().catch(() => resolve());
+    }
+  });
 }
 const gradeGroupToGrade = {
   "primary-early": [1, 2, 3],
@@ -792,11 +835,28 @@ const lessonContent: Record<
 
 export default function LessonPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ gradeGroup: string; subjectId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { gradeGroup, subjectId } = use(params);
+  const urlParams = use(searchParams);
   const router = useRouter();
+
+  // Check for Gemini Live mode - prioritize if available
+  const hasGeminiApiKey =
+    typeof window !== "undefined" && process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const isGeminiLivePreferred =
+    urlParams?.gemini_live !== "false" && urlParams?.gemini_live !== "0";
+  const shouldUseGeminiLive =
+    hasGeminiApiKey &&
+    isGeminiLivePreferred &&
+    VOICE_GRADE_GROUPS.has(gradeGroup);
+
+  // Voice mode detection (Gemini Live first, then fallback to standard voice)
+  const isVoiceEnabled = VOICE_GRADE_GROUPS.has(gradeGroup);
+  const isGeminiLiveMode = shouldUseGeminiLive;
 
   // State for AI-generated lessons
   const [lesson, setLesson] = useState<GeneratedLesson | null>(null);
@@ -805,12 +865,29 @@ export default function LessonPage({
   const [cacheId, setCacheId] = useState<string>("");
   const [startedAt] = useState(() => Date.now());
 
-  // Voice state
-  const isVoiceEnabled = VOICE_GRADE_GROUPS.has(gradeGroup);
+  // Voice state (used for fallback when Gemini Live not available)
   const [voiceReady, setVoiceReady] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceMuted, setVoiceMuted] = useState(false);
-  const audioRef = useRef<{ contentAudio: any[]; quizAudio: any[] } | null>(null);
+  const audioRef = useRef<{ contentAudio: any[]; quizAudio: any[] } | null>(
+    null
+  );
+
+  // Voice lesson hook for recording and echo functionality
+  const {
+    state: voiceLessonState,
+    runEchoSequence,
+    playVoiceScript,
+    playSoundButton,
+    playQuizPrompt,
+    playExplanation,
+    stop,
+  } = useVoiceLesson();
+
+  // Extract state properties for easier access
+  const isRecording = voiceLessonState.echoState === "recording";
+  const isPlaying = voiceLessonState.isPlaying;
+  const transcription = voiceLessonState.transcript;
 
   // Lesson progress state
   const [currentStep, setCurrentStep] = useState(0);
@@ -898,48 +975,108 @@ export default function LessonPage({
   }, [gradeGroup, subjectId]);
 
   // Auto-play voice when step changes and audio is ready
-  const speakStep = useCallback(async (stepIndex: number) => {
-    if (!voiceReady || voiceMuted || !audioRef.current) return;
-    const step = lesson?.steps[stepIndex];
-    if (!step) return;
+  const speakStep = useCallback(
+    async (stepIndex: number) => {
+      if (!voiceReady || voiceMuted || !audioRef.current) return;
+      const step = lesson?.steps[stepIndex];
+      if (!step) return;
 
-    setIsSpeaking(true);
-    try {
-      if (step.type === "content") {
-        const ca = audioRef.current.contentAudio.find((a: any) => a.stepIndex === stepIndex);
-        if (ca?.voiceScriptAudio) await playBase64Audio(ca.voiceScriptAudio);
-        if (ca?.activityAudio) {
-          await new Promise((r) => setTimeout(r, 400));
-          await playBase64Audio(ca.activityAudio);
-        }
-        if (ca?.repeatAfterMeClips?.length > 0) {
-          for (const clip of ca.repeatAfterMeClips) {
-            await new Promise((r) => setTimeout(r, 300));
-            await playBase64Audio(clip.audio);
-            await new Promise((r) => setTimeout(r, 1500)); // pause for child to echo
-          }
-        }
-      } else {
-        const qa = audioRef.current.quizAudio.find((a: any) => a.stepIndex === stepIndex);
-        if (qa?.voicePromptAudio) await playBase64Audio(qa.voicePromptAudio);
-      }
-    } finally {
-      setIsSpeaking(false);
-    }
-  }, [voiceReady, voiceMuted, lesson]);
-
-  const speakExplanation = useCallback(async (stepIndex: number) => {
-    if (!voiceReady || voiceMuted || !audioRef.current) return;
-    const qa = audioRef.current.quizAudio.find((a: any) => a.stepIndex === stepIndex);
-    if (qa?.voiceExplanationAudio) {
       setIsSpeaking(true);
-      await playBase64Audio(qa.voiceExplanationAudio).finally(() => setIsSpeaking(false));
-    }
-  }, [voiceReady, voiceMuted]);
+      try {
+        if (step.type === "content") {
+          const ca = audioRef.current.contentAudio.find(
+            (a: any) => a.stepIndex === stepIndex
+          );
+          if (ca?.voiceScriptAudio) await playBase64Audio(ca.voiceScriptAudio);
+          if (ca?.activityAudio) {
+            await new Promise((r) => setTimeout(r, 400));
+            await playBase64Audio(ca.activityAudio);
+          }
+          if (ca?.repeatAfterMeClips?.length > 0) {
+            for (const clip of ca.repeatAfterMeClips) {
+              await new Promise((r) => setTimeout(r, 300));
+              await playBase64Audio(clip.audio);
+              await new Promise((r) => setTimeout(r, 1500)); // pause for child to echo
+            }
+          }
+        } else {
+          const qa = audioRef.current.quizAudio.find(
+            (a: any) => a.stepIndex === stepIndex
+          );
+          if (qa?.voicePromptAudio) await playBase64Audio(qa.voicePromptAudio);
+        }
+      } finally {
+        setIsSpeaking(false);
+      }
+    },
+    [voiceReady, voiceMuted, lesson]
+  );
+
+  // Enhanced repeat-after-me with recording
+  const runRepeatAfterMeWithRecording = useCallback(
+    async (stepIndex: number) => {
+      if (!voiceReady || voiceMuted || !audioRef.current) return;
+      const step = lesson?.steps[stepIndex];
+      if (!step || step.type !== "content") return;
+
+      const ca = audioRef.current.contentAudio.find(
+        (a: any) => a.stepIndex === stepIndex
+      );
+
+      // Cast to access extra fields from AI-generated content
+      const extraFields = step as any;
+
+      if (
+        ca?.repeatAfterMeClips?.length > 0 &&
+        extraFields.repeatAfterMe?.length > 0
+      ) {
+        setIsSpeaking(true);
+        try {
+          // Use the voice lesson hook's echo sequence functionality
+          const clips = ca.repeatAfterMeClips.map((clip: any) => ({
+            text: clip.text,
+            audio: clip.audio,
+            pauseAfterMs: 2000, // 2 seconds for child to respond
+          }));
+
+          // Create listenFor arrays - each phrase has multiple accepted variations
+          const listenFor = extraFields.repeatAfterMe.map((phrase: string) => [
+            phrase.toLowerCase(),
+            phrase.toLowerCase().replace(/[.,!?]/g, ""), // without punctuation
+            phrase.split(" ")[0].toLowerCase(), // first word only
+          ]);
+
+          await runEchoSequence(clips, listenFor, () => {
+            console.log("Repeat-after-me sequence completed!");
+            setXpEarned((prev) => prev + 5); // Bonus XP for voice interaction
+          });
+        } finally {
+          setIsSpeaking(false);
+        }
+      }
+    },
+    [voiceReady, voiceMuted, lesson, runEchoSequence, setXpEarned]
+  );
+
+  const speakExplanation = useCallback(
+    async (stepIndex: number) => {
+      if (!voiceReady || voiceMuted || !audioRef.current) return;
+      const qa = audioRef.current.quizAudio.find(
+        (a: any) => a.stepIndex === stepIndex
+      );
+      if (qa?.voiceExplanationAudio) {
+        setIsSpeaking(true);
+        await playBase64Audio(qa.voiceExplanationAudio).finally(() =>
+          setIsSpeaking(false)
+        );
+      }
+    },
+    [voiceReady, voiceMuted]
+  );
 
   useEffect(() => {
     if (voiceReady && lesson) speakStep(currentStep);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voiceReady, currentStep]);
 
   // Loading state
@@ -1015,7 +1152,10 @@ export default function LessonPage({
   const handleCheckAnswer = () => {
     if (selectedAnswer === null) return;
     setShowResult(true);
-    if (currentLesson.type === "quiz" && selectedAnswer === currentLesson.correctAnswer) {
+    if (
+      currentLesson.type === "quiz" &&
+      selectedAnswer === currentLesson.correctAnswer
+    ) {
       setCorrectAnswers((prev) => prev + 1);
       setXpEarned((prev) => prev + 10);
     }
@@ -1028,7 +1168,9 @@ export default function LessonPage({
       router.push(
         `/playground/${gradeGroup}/lesson/${subjectId}/results?correct=${correctAnswers}&total=${
           steps.filter((l) => l.type === "quiz").length
-        }&xp=${xpEarned}&cacheId=${cacheId}&duration=${Math.round((Date.now() - startedAt) / 1000)}`
+        }&xp=${xpEarned}&cacheId=${cacheId}&duration=${Math.round(
+          (Date.now() - startedAt) / 1000
+        )}`
       );
     } else {
       setCurrentStep((prev) => prev + 1);
@@ -1060,18 +1202,50 @@ export default function LessonPage({
             </div>
             <div className="flex items-center gap-2">
               {isVoiceEnabled && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (isSpeaking) return;
-                    setVoiceMuted((m) => !m);
-                  }}
-                  className="text-muted-foreground"
-                  title={voiceMuted ? "Unmute voice" : "Mute voice"}
-                >
-                  {voiceMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-                </Button>
+                <>
+                  {/* Voice Mode Toggle */}
+                  {hasGeminiApiKey && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newUrl = new URL(window.location.href);
+                        if (isGeminiLiveMode) {
+                          newUrl.searchParams.set("gemini_live", "false");
+                        } else {
+                          newUrl.searchParams.delete("gemini_live");
+                        }
+                        window.location.href = newUrl.toString();
+                      }}
+                      className="text-xs"
+                      title={
+                        isGeminiLiveMode
+                          ? "Switch to Standard Voice"
+                          : "Switch to Gemini Live AI"
+                      }
+                    >
+                      {isGeminiLiveMode ? "🎤 Standard" : "🤖 AI Live"}
+                    </Button>
+                  )}
+
+                  {/* Voice Mute Toggle */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (isSpeaking) return;
+                      setVoiceMuted((m) => !m);
+                    }}
+                    className="text-muted-foreground"
+                    title={voiceMuted ? "Unmute voice" : "Mute voice"}
+                  >
+                    {voiceMuted ? (
+                      <VolumeX className="h-5 w-5" />
+                    ) : (
+                      <Volume2 className="h-5 w-5" />
+                    )}
+                  </Button>
+                </>
               )}
               <div className="flex items-center gap-2 text-amber-500">
                 <Star className="h-5 w-5 fill-current" />
@@ -1088,191 +1262,382 @@ export default function LessonPage({
 
       {/* Main Content */}
       <main className="max-w-3xl mx-auto px-4 py-8">
-        {currentLesson.type === "content" ? (
-          <Card className="p-8">
-            {/* Speaking indicator */}
-            {isSpeaking && (
-              <div className="flex items-center gap-2 text-primary mb-4 text-sm">
-                <Volume2 className="h-4 w-4 animate-pulse" />
-                <span>Listening...</span>
+        {/* Gemini Live Voice Assistant Mode (Primary) */}
+        {isGeminiLiveMode && (
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-4 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-purple-700 font-medium">
+                  🎯 Gemini Live AI Tutor Active
+                </span>
+                <span className="text-purple-600 text-sm">
+                  (Real-time conversation)
+                </span>
               </div>
-            )}
-
-            <h2 className="text-2xl font-bold text-foreground mb-6">
-              {currentLesson.title}
-            </h2>
-
-            <p className="text-lg text-foreground leading-relaxed mb-6">
-              {currentLesson.content}
-            </p>
-
-            {currentLesson.example && (
-              <div className="bg-primary/10 rounded-xl p-6 mb-4">
-                <div className="flex items-center gap-2 text-primary mb-3">
-                  <Lightbulb className="h-5 w-5" />
-                  <span className="font-semibold">Example</span>
-                </div>
-                <p className="text-foreground font-medium">{currentLesson.example}</p>
-              </div>
-            )}
-
-            {/* Activity prompt — shown for all subjects */}
-            {extra.activityPrompt && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-4">
-                <div className="flex items-center gap-2 text-amber-700 mb-2">
-                  <Hand className="h-5 w-5" />
-                  <span className="font-semibold">Try it now!</span>
-                </div>
-                <p className="text-amber-900 font-medium">{extra.activityPrompt as string}</p>
-              </div>
-            )}
-
-            {/* Subject-specific fact */}
-            {(extra.scienceFact ?? extra.musicFact ?? extra.codingFact ?? extra.worldFact) && (
-              <div className="bg-purple-50 border border-purple-200 rounded-xl p-5 mb-6">
-                <div className="flex items-center gap-2 text-purple-700 mb-2">
-                  <Sparkles className="h-4 w-4" />
-                  <span className="font-semibold">Wow fact! 🤩</span>
-                </div>
-                <p className="text-purple-900 text-sm">
-                  {(extra.scienceFact ?? extra.musicFact ?? extra.codingFact ?? extra.worldFact) as string}
-                </p>
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              {isVoiceEnabled && voiceReady && (
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => speakStep(currentStep)}
-                  disabled={isSpeaking}
-                  className="flex-shrink-0"
-                >
-                  <Volume2 className="h-5 w-5" />
-                </Button>
-              )}
-              <Button size="lg" className="w-full" onClick={handleNext}>
-                {isLastStep ? "Complete Lesson" : "Continue"}
-                <ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
             </div>
-          </Card>
-        ) : (
-          /* Quiz View */
-          (() => {
-            const quizStep = currentLesson as QuizStep;
-            return (
+            <GeminiLiveSession
+              childProfile={{
+                name: "Student", // You can get this from user data
+                age: getGradeFromGroup(gradeGroup) + 4, // Grade 1 = age 5, etc.
+                grade: getGradeFromGroup(gradeGroup),
+                interests: [subjectId], // Current subject as interest
+                learningStyle: "visual", // Default, could be user preference
+                strugglingWith: [],
+                excelsAt: [],
+                currentTopic: subjectId,
+              }}
+              lessonSubject={subjectId}
+              onSessionEnd={(summary) => {
+                console.log("Gemini Live session completed:", summary);
+                // Update XP based on engagement and concepts learned
+                const sessionXP = Math.round(
+                  summary.engagement * summary.concepts_learned.length * 10
+                );
+                setXpEarned((prev) => prev + sessionXP);
+                // Move to next step or complete lesson
+                handleNext();
+              }}
+            />
+          </div>
+        )}
+
+        {/* Standard Voice Lessons (Fallback when Gemini Live unavailable) */}
+        {!isGeminiLiveMode && isVoiceEnabled && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              <span className="text-blue-700 font-medium">
+                🎤 Standard Voice Mode
+              </span>
+              <span className="text-blue-600 text-sm">
+                (Pre-recorded responses)
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Lesson Content (both modes) */}
+        {!isGeminiLiveMode && (
+          <>
+            {currentLesson.type === "content" ? (
               <Card className="p-8">
-                {isSpeaking && (
+                {/* Speaking/Recording indicator */}
+                {(isSpeaking || isRecording || isPlaying) && (
                   <div className="flex items-center gap-2 text-primary mb-4 text-sm">
-                    <Volume2 className="h-4 w-4 animate-pulse" />
-                    <span>Listening...</span>
+                    {isSpeaking && (
+                      <>
+                        <Volume2 className="h-4 w-4 animate-pulse" />
+                        <span>Speaking...</span>
+                      </>
+                    )}
+                    {isRecording && (
+                      <>
+                        <Mic className="h-4 w-4 animate-pulse text-red-500" />
+                        <span className="text-red-600">
+                          Recording your voice...
+                        </span>
+                      </>
+                    )}
+                    {isPlaying && (
+                      <>
+                        <Volume2 className="h-4 w-4 animate-pulse" />
+                        <span>Playing back...</span>
+                      </>
+                    )}
                   </div>
                 )}
-                <h2 className="text-2xl font-bold text-foreground mb-8 text-center">
-                  {quizStep.question}
+
+                {/* Transcription feedback */}
+                {transcription && (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+                    <div className="flex items-center gap-2 text-green-700 mb-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span className="font-semibold">Great job! I heard:</span>
+                    </div>
+                    <p className="text-green-800 font-medium">
+                      "{transcription}"
+                    </p>
+                  </div>
+                )}
+
+                <h2 className="text-2xl font-bold text-foreground mb-6">
+                  {(currentLesson as any).title}
                 </h2>
 
-                <div className="space-y-4 mb-8">
-                  {quizStep.options?.map((option, index) => {
-                    let buttonStyle =
-                      "border-2 border-border bg-card hover:border-primary hover:bg-accent";
+                <p className="text-lg text-foreground leading-relaxed mb-6">
+                  {(currentLesson as any).content}
+                </p>
 
-                    if (showResult) {
-                      if (index === quizStep.correctAnswer) {
-                        buttonStyle =
-                          "border-2 border-green-500 bg-green-50 text-green-700";
-                      } else if (
-                        index === selectedAnswer &&
-                        selectedAnswer !== quizStep.correctAnswer
-                      ) {
-                        buttonStyle =
-                          "border-2 border-red-500 bg-red-50 text-red-700";
-                      }
-                    } else if (selectedAnswer === index) {
-                      buttonStyle = "border-2 border-primary bg-primary/10";
-                    }
-
-                    return (
-                      <button
-                        key={index}
-                        onClick={() => handleAnswerSelect(index)}
-                        disabled={showResult}
-                        className={`w-full p-4 rounded-xl text-left text-lg font-medium transition-all ${buttonStyle}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span>{option}</span>
-                          {showResult && index === quizStep.correctAnswer && (
-                            <CheckCircle2 className="h-6 w-6 text-green-500" />
-                          )}
-                          {showResult &&
-                            index === selectedAnswer &&
-                            selectedAnswer !== quizStep.correctAnswer && (
-                              <XCircle className="h-6 w-6 text-red-500" />
-                            )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {showResult && quizStep.explanation && (
-                  <div
-                    className={`rounded-xl p-4 mb-6 ${
-                      selectedAnswer === quizStep.correctAnswer
-                        ? "bg-green-50 border border-green-200"
-                        : "bg-amber-50 border border-amber-200"
-                    }`}
-                  >
-                    <p className="text-foreground">{quizStep.explanation}</p>
-                  </div>
-                )}
-
-                {quizStep.hint && !showResult && selectedAnswer !== null && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                    <div className="flex items-center gap-2 text-blue-700 mb-2">
-                      <Lightbulb className="h-4 w-4" />
-                      <span className="font-semibold">Hint</span>
+                {(currentLesson as any).example && (
+                  <div className="bg-primary/10 rounded-xl p-6 mb-4">
+                    <div className="flex items-center gap-2 text-primary mb-3">
+                      <Lightbulb className="h-5 w-5" />
+                      <span className="font-semibold">Example</span>
                     </div>
-                    <p className="text-blue-800">{quizStep.hint}</p>
+                    <p className="text-foreground font-medium">
+                      {(currentLesson as any).example}
+                    </p>
                   </div>
                 )}
 
-                {!showResult ? (
-                  <div className="flex gap-3">
-                    {isVoiceEnabled && voiceReady && (
+                {/* Activity prompt — shown for all subjects */}
+                {extra.activityPrompt && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 mb-4">
+                    <div className="flex items-center gap-2 text-amber-700 mb-2">
+                      <Hand className="h-5 w-5" />
+                      <span className="font-semibold">Try it now!</span>
+                    </div>
+                    <p className="text-amber-900 font-medium">
+                      {extra.activityPrompt as string}
+                    </p>
+                  </div>
+                )}
+
+                {/* Subject-specific fact */}
+                {(extra.scienceFact ??
+                  extra.musicFact ??
+                  extra.codingFact ??
+                  extra.worldFact) && (
+                  <div className="bg-purple-50 border border-purple-200 rounded-xl p-5 mb-6">
+                    <div className="flex items-center gap-2 text-purple-700 mb-2">
+                      <Sparkles className="h-4 w-4" />
+                      <span className="font-semibold">Wow fact! 🤩</span>
+                    </div>
+                    <p className="text-purple-900 text-sm">
+                      {
+                        (extra.scienceFact ??
+                          extra.musicFact ??
+                          extra.codingFact ??
+                          extra.worldFact) as string
+                      }
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  {isVoiceEnabled && voiceReady && (
+                    <>
                       <Button
                         variant="outline"
                         size="lg"
                         onClick={() => speakStep(currentStep)}
                         disabled={isSpeaking}
-                        className="flex-shrink-0"
+                        className="shrink-0"
                       >
                         <Volume2 className="h-5 w-5" />
                       </Button>
-                    )}
-                    <Button
-                      size="lg"
-                      className="w-full"
-                      onClick={handleCheckAnswer}
-                      disabled={selectedAnswer === null}
-                    >
-                      Check Answer
-                    </Button>
-                  </div>
-                ) : (
+                      {/* Talk-Back button for repeat-after-me with recording */}
+                      {extra.repeatAfterMe &&
+                        Array.isArray(extra.repeatAfterMe) &&
+                        extra.repeatAfterMe.length > 0 && (
+                          <Button
+                            variant="outline"
+                            size="lg"
+                            onClick={() =>
+                              runRepeatAfterMeWithRecording(currentStep)
+                            }
+                            disabled={isSpeaking || isRecording}
+                            className="shrink-0 bg-blue-50 border-blue-200 hover:bg-blue-100"
+                            title="Practice saying the words!"
+                          >
+                            {isRecording ? (
+                              <MicOff className="h-5 w-5 text-red-500" />
+                            ) : (
+                              <Mic className="h-5 w-5 text-blue-600" />
+                            )}
+                          </Button>
+                        )}
+                    </>
+                  )}
                   <Button size="lg" className="w-full" onClick={handleNext}>
-                    {isLastStep ? "See Results" : "Continue"}
+                    {isLastStep ? "Complete Lesson" : "Continue"}
                     <ArrowRight className="h-5 w-5 ml-2" />
                   </Button>
-                )}
+                </div>
               </Card>
-            );
-          })()
+            ) : (
+              /* Quiz View */
+              (() => {
+                const quizStep = currentLesson as QuizStep;
+                return (
+                  <Card className="p-8">
+                    {/* Speaking/Recording indicator */}
+                    {(isSpeaking || isRecording || isPlaying) && (
+                      <div className="flex items-center gap-2 text-primary mb-4 text-sm">
+                        {isSpeaking && (
+                          <>
+                            <Volume2 className="h-4 w-4 animate-pulse" />
+                            <span>Speaking...</span>
+                          </>
+                        )}
+                        {isRecording && (
+                          <>
+                            <Mic className="h-4 w-4 animate-pulse text-red-500" />
+                            <span className="text-red-600">
+                              Recording your answer...
+                            </span>
+                          </>
+                        )}
+                        {isPlaying && (
+                          <>
+                            <Volume2 className="h-4 w-4 animate-pulse" />
+                            <span>Playing back...</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    <h2 className="text-2xl font-bold text-foreground mb-8 text-center">
+                      {quizStep.question}
+                    </h2>
+
+                    {/* Transcription feedback for quiz */}
+                    {transcription && !showResult && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                        <div className="flex items-center gap-2 text-blue-700 mb-2">
+                          <Mic className="h-4 w-4" />
+                          <span className="font-semibold">
+                            I heard you say:
+                          </span>
+                        </div>
+                        <p className="text-blue-800 font-medium">
+                          "{transcription}"
+                        </p>
+                        <p className="text-blue-600 text-sm mt-2">
+                          Click on the matching answer or speak again!
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="space-y-4 mb-8">
+                      {quizStep.options?.map((option, index) => {
+                        let buttonStyle =
+                          "border-2 border-border bg-card hover:border-primary hover:bg-accent";
+
+                        if (showResult) {
+                          if (index === quizStep.correctAnswer) {
+                            buttonStyle =
+                              "border-2 border-green-500 bg-green-50 text-green-700";
+                          } else if (
+                            index === selectedAnswer &&
+                            selectedAnswer !== quizStep.correctAnswer
+                          ) {
+                            buttonStyle =
+                              "border-2 border-red-500 bg-red-50 text-red-700";
+                          }
+                        } else if (selectedAnswer === index) {
+                          buttonStyle = "border-2 border-primary bg-primary/10";
+                        }
+
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => handleAnswerSelect(index)}
+                            disabled={showResult}
+                            className={`w-full p-4 rounded-xl text-left text-lg font-medium transition-all ${buttonStyle}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span>{option}</span>
+                              {showResult &&
+                                index === quizStep.correctAnswer && (
+                                  <CheckCircle2 className="h-6 w-6 text-green-500" />
+                                )}
+                              {showResult &&
+                                index === selectedAnswer &&
+                                selectedAnswer !== quizStep.correctAnswer && (
+                                  <XCircle className="h-6 w-6 text-red-500" />
+                                )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {showResult && quizStep.explanation && (
+                      <div
+                        className={`rounded-xl p-4 mb-6 ${
+                          selectedAnswer === quizStep.correctAnswer
+                            ? "bg-green-50 border border-green-200"
+                            : "bg-amber-50 border border-amber-200"
+                        }`}
+                      >
+                        <p className="text-foreground">
+                          {quizStep.explanation}
+                        </p>
+                      </div>
+                    )}
+
+                    {quizStep.hint &&
+                      !showResult &&
+                      selectedAnswer !== null && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                          <div className="flex items-center gap-2 text-blue-700 mb-2">
+                            <Lightbulb className="h-4 w-4" />
+                            <span className="font-semibold">Hint</span>
+                          </div>
+                          <p className="text-blue-800">{quizStep.hint}</p>
+                        </div>
+                      )}
+
+                    {!showResult ? (
+                      <div className="flex gap-3">
+                        {isVoiceEnabled && voiceReady && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="lg"
+                              onClick={() => speakStep(currentStep)}
+                              disabled={isSpeaking}
+                              className="shrink-0"
+                            >
+                              <Volume2 className="h-5 w-5" />
+                            </Button>
+                            {/* Voice answer button for quiz */}
+                            <Button
+                              variant="outline"
+                              size="lg"
+                              onClick={() => {
+                                // Simple implementation: trigger a voice recording session
+                                setIsSpeaking(true);
+                                setTimeout(() => setIsSpeaking(false), 3000);
+                                // TODO: Implement voice answer matching logic
+                                console.log("Voice answer recording triggered");
+                              }}
+                              disabled={isSpeaking}
+                              className="shrink-0 bg-blue-50 border-blue-200 hover:bg-blue-100"
+                              title="Record your answer"
+                            >
+                              {isSpeaking ? (
+                                <MicOff className="h-5 w-5 text-red-500" />
+                              ) : (
+                                <Mic className="h-5 w-5 text-blue-600" />
+                              )}
+                            </Button>
+                          </>
+                        )}
+                        <Button
+                          size="lg"
+                          className="w-full"
+                          onClick={handleCheckAnswer}
+                          disabled={selectedAnswer === null}
+                        >
+                          Check Answer
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button size="lg" className="w-full" onClick={handleNext}>
+                        {isLastStep ? "See Results" : "Continue"}
+                        <ArrowRight className="h-5 w-5 ml-2" />
+                      </Button>
+                    )}
+                  </Card>
+                );
+              })()
+            )}
+          </>
         )}
       </main>
     </div>
   );
 }
-
