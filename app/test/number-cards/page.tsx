@@ -1,3 +1,5 @@
+"use client";
+
 import { Suspense } from "react";
 import NumberCard from "@/components/eatutori/NumberCard";
 import NumberSequence from "@/components/eatutori/NumberSequence";
