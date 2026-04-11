@@ -64,175 +64,74 @@ export default function LetterCard({
     letterExamples[letter.toUpperCase()]
   );
 
-  // Grade-specific timing adjustments
-  const getTimingForGrade = () => {
-    switch (gradeDifficulty) {
-      case 1:
-        return {
-          see: 2000,
-          hear: 4000,
-          say: 4000,
-          phonics: 5000,
-          trace: 4000,
-          word: 5000,
-          complete: 3000,
-        };
-      case 2:
-        return {
-          see: 1500,
-          hear: 3500,
-          say: 3500,
-          phonics: 4000,
-          trace: 3500,
-          word: 4000,
-          complete: 2500,
-        };
-      case 3:
-        return {
-          see: 1000,
-          hear: 3000,
-          say: 3000,
-          phonics: 3500,
-          trace: 3000,
-          word: 3500,
-          complete: 2000,
-        };
-    }
-  };
+  // Pause between phases so the child has time to respond
+  const pauseMs = gradeDifficulty === 1 ? 1500 : gradeDifficulty === 2 ? 1200 : 1000;
 
   // Auto-start the letter learning sequence
   useEffect(() => {
-    if (phase === "see") {
-      const timing = getTimingForGrade();
+    if (phase !== "see") return;
+    let cancelled = false;
 
-      // Phase 1: See the letter
-      setTimeout(() => {
-        setPhase("hear");
-        speakWithBrowserTTS(
-          `This is the letter ${letter.toUpperCase()}. Look at this beautiful letter ${letter.toUpperCase()}!`
+    const run = async () => {
+      await new Promise((r) => setTimeout(r, 800)); // brief "see" pause
+      if (cancelled) return;
+
+      setPhase("hear");
+      await speakWithBrowserTTS(
+        `This is the letter ${letter.toUpperCase()}. Look at this beautiful letter ${letter.toUpperCase()}!`
+      );
+      if (cancelled) return;
+
+      if (showPhonics) {
+        setPhase("phonics");
+        await speakWithBrowserTTS(
+          `The letter ${letter.toUpperCase()} makes the sound ${currentExample.phonics}. Listen: ${currentExample.phonics}`
         );
+        if (cancelled) return;
+      }
 
-        // Phase 2: Hear about the letter
-        setTimeout(() => {
-          if (showPhonics) {
-            setPhase("phonics");
-            speakWithBrowserTTS(
-              `The letter ${letter.toUpperCase()} makes the sound ${
-                currentExample.phonics
-              }. Listen: ${currentExample.phonics}`
-            );
+      setPhase("say");
+      await speakWithBrowserTTS(`Now you say the letter: ${letter.toUpperCase()}`);
+      await new Promise((r) => setTimeout(r, pauseMs)); // child echo pause
+      if (cancelled) return;
 
-            setTimeout(() => {
-              setPhase("say");
-              speakWithBrowserTTS(
-                `Now you say the letter: ${letter.toUpperCase()}`
-              );
+      setPhase("trace");
+      await speakWithBrowserTTS("Excellent! Now practice tracing the letter with your finger!");
+      await new Promise((r) => setTimeout(r, pauseMs));
+      if (cancelled) return;
 
-              setTimeout(() => {
-                setPhase("trace");
-                speakWithBrowserTTS(
-                  "Excellent! Now practice tracing the letter with your finger!"
-                );
+      if (showWords) {
+        setPhase("word");
+        await speakWithBrowserTTS(
+          `${letter.toUpperCase()} is for ${currentExample.word}! Can you say ${currentExample.word}?`
+        );
+        await new Promise((r) => setTimeout(r, pauseMs));
+        if (cancelled) return;
+      }
 
-                setTimeout(() => {
-                  if (showWords) {
-                    setPhase("word");
-                    speakWithBrowserTTS(
-                      `${letter.toUpperCase()} is for ${
-                        currentExample.word
-                      }! Can you say ${currentExample.word}?`
-                    );
+      setPhase("complete");
+      await speakWithBrowserTTS(`Amazing work! You learned the letter ${letter.toUpperCase()}!`);
+      if (!cancelled) onComplete?.();
+    };
 
-                    setTimeout(() => {
-                      setPhase("complete");
-                      speakWithBrowserTTS(
-                        `Amazing work! You learned the letter ${letter.toUpperCase()}!`
-                      );
+    run();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [letter]);
 
-                      setTimeout(() => {
-                        onComplete?.();
-                      }, timing.complete);
-                    }, timing.word);
-                  } else {
-                    setPhase("complete");
-                    speakWithBrowserTTS(
-                      `Amazing work! You learned the letter ${letter.toUpperCase()}!`
-                    );
-
-                    setTimeout(() => {
-                      onComplete?.();
-                    }, timing.complete);
-                  }
-                }, timing.trace);
-              }, timing.say);
-            }, timing.phonics);
-          } else {
-            setPhase("say");
-            speakWithBrowserTTS(
-              `Now you say the letter: ${letter.toUpperCase()}`
-            );
-
-            setTimeout(() => {
-              setPhase("trace");
-              speakWithBrowserTTS(
-                "Excellent! Now practice tracing the letter with your finger!"
-              );
-
-              setTimeout(() => {
-                if (showWords) {
-                  setPhase("word");
-                  speakWithBrowserTTS(
-                    `${letter.toUpperCase()} is for ${
-                      currentExample.word
-                    }! Can you say ${currentExample.word}?`
-                  );
-
-                  setTimeout(() => {
-                    setPhase("complete");
-                    speakWithBrowserTTS(
-                      `Amazing work! You learned the letter ${letter.toUpperCase()}!`
-                    );
-
-                    setTimeout(() => {
-                      onComplete?.();
-                    }, timing.complete);
-                  }, timing.word);
-                } else {
-                  setPhase("complete");
-                  speakWithBrowserTTS(
-                    `Amazing work! You learned the letter ${letter.toUpperCase()}!`
-                  );
-
-                  setTimeout(() => {
-                    onComplete?.();
-                  }, timing.complete);
-                }
-              }, timing.trace);
-            }, timing.say);
-          }
-        }, timing.hear);
-      }, timing.see);
-    }
-  }, [
-    phase,
-    letter,
-    showPhonics,
-    showWords,
-    gradeDifficulty,
-    currentExample,
-    onComplete,
-  ]);
-
-  // Simple browser TTS with letter-appropriate settings
-  const speakWithBrowserTTS = (text: string) => {
-    if ("speechSynthesis" in window) {
+  // Browser TTS — returns a Promise that resolves when speech ends
+  const speakWithBrowserTTS = (text: string): Promise<void> => {
+    return new Promise((resolve) => {
+      if (!("speechSynthesis" in window)) { resolve(); return; }
+      speechSynthesis.cancel(); // stop any previous speech
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate =
-        gradeDifficulty === 1 ? 0.7 : gradeDifficulty === 2 ? 0.8 : 0.9;
+      utterance.rate = gradeDifficulty === 1 ? 0.7 : gradeDifficulty === 2 ? 0.8 : 0.9;
       utterance.pitch = 1.2;
       utterance.volume = 0.8;
+      utterance.onend = () => resolve();
+      utterance.onerror = () => resolve();
       speechSynthesis.speak(utterance);
-    }
+    });
   };
 
   // Phase colors and indicators

@@ -23,213 +23,78 @@ export default function NumberCard({
   autoStart = true
 }: NumberCardProps) {
   const [phase, setPhase] = useState<LearningPhase>('see');
-  const [isListening, setIsListening] = useState(false);
-  const [userResponse, setUserResponse] = useState<string>('');
-  const [feedback, setFeedback] = useState<string>('');
-  const [attempts, setAttempts] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Auto-start the learning sequence
-  useEffect(() => {
-    if (autoStart && phase === 'see') {
-      setTimeout(() => {
-        startHearPhase();
-      }, 1000);
-    }
-  }, [autoStart]);
+  // Child echo pause — time given for the child to repeat the number aloud
+  const echoPauseMs = 3000;
 
-  // Phase 1: Visual Display (See)
-  const startHearPhase = async () => {
-    setPhase('hear');
-    setIsPlaying(true);
-    
+  // Speak via API with browser TTS fallback
+  const speak = async (text: string, rate = 0.8): Promise<void> => {
     try {
-      const script = showObjects 
+      const { audio } = await speakText(text, rate, userGrade);
+      await playAudio(audio);
+    } catch {
+      await browserSpeak(text, rate);
+    }
+  };
+
+  const browserSpeak = (text: string, rate = 0.8): Promise<void> =>
+    new Promise((resolve) => {
+      if (!('speechSynthesis' in window)) { resolve(); return; }
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = rate; u.pitch = 1.1; u.volume = 0.8;
+      u.onend = () => resolve();
+      u.onerror = () => resolve();
+      speechSynthesis.speak(u);
+    });
+
+  // Sequential learning flow — runs once per number
+  useEffect(() => {
+    if (!autoStart) return;
+    let cancelled = false;
+
+    const run = async () => {
+      await new Promise((r) => setTimeout(r, 800)); // "see" pause
+      if (cancelled) return;
+
+      setPhase('hear');
+      setIsPlaying(true);
+      const script = showObjects
         ? `This is the number ${number}. You can see ${number} ${objectType}${number > 1 ? 's' : ''}.`
         : `This is the number ${number}.`;
-      
-      const { audio } = await speakText(script, 0.8, userGrade);
-      await playAudio(audio);
-      
-      setTimeout(() => {
-        startSayPhase();
-      }, 1500);
-    } catch (error) {
-      console.error('TTS failed:', error);
-      setTimeout(() => startSayPhase(), 2000);
-    } finally {
+      await speak(script, 0.8);
       setIsPlaying(false);
-    }
-  };
+      if (cancelled) return;
 
-  // Phase 2: Speech Input (Say)
-  const startSayPhase = async () => {
-    setPhase('say');
-    setIsPlaying(true);
-    
-    try {
-      const prompt = attempts === 0 
-        ? `Now you say: ${number}`
-        : attempts === 1 
-          ? `Try again, say: ${number}`
-          : `Let's try once more. Say: ${number}`;
-      
-      const { audio } = await speakText(prompt, 0.75, userGrade);
-      await playAudio(audio);
-      
-      setTimeout(() => {
-        startListening();
-      }, 1000);
-    } catch (error) {
-      console.error('TTS failed:', error);
-      setTimeout(() => startListening(), 1500);
-    } finally {
+      setPhase('say');
+      setIsPlaying(true);
+      await speak(`Now you say it. ${number}`, 0.75);
       setIsPlaying(false);
-    }
-  };
+      if (cancelled) return;
 
-  // Phase 3: Listen for user response
-  const startListening = () => {
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      // Fallback: simulate correct answer
-      setTimeout(() => {
-        handleSpeechResult(number.toString());
-      }, 1000);
-      return;
-    }
+      // Pause for child to echo — no mic needed
+      await new Promise((r) => setTimeout(r, echoPauseMs));
+      if (cancelled) return;
 
-    setIsListening(true);
-    
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
-    
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript.toLowerCase().trim();
-      setUserResponse(transcript);
-      handleSpeechResult(transcript);
-    };
-    
-    recognition.onerror = () => {
-      setIsListening(false);
-      // Retry or give hint after error
-      setTimeout(() => {
-        if (attempts < 2) {
-          startSayPhase();
-        } else {
-          giveFinalFeedback();
-        }
-      }, 1000);
-    };
-    
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-    
-    recognition.start();
-    
-    // Auto-stop after 5 seconds
-    setTimeout(() => {
-      recognition.stop();
-    }, 5000);
-  };
+      setPhase('feedback');
+      setIsPlaying(true);
+      await speak(`Great job! The number is ${number}.`, 0.8);
+      setIsPlaying(false);
+      if (cancelled) return;
 
-  // Evaluate user's speech
-  const handleSpeechResult = async (transcript: string) => {
-    setIsListening(false);
-    setPhase('feedback');
-    
-    const expectedAnswers = [
-      number.toString(),
-      getNumberWord(number),
-      `${number}`,
-    ];
-    
-    const isCorrect = expectedAnswers.some(answer => 
-      transcript.includes(answer.toLowerCase()) || 
-      answer.toLowerCase().includes(transcript)
-    );
-    
-    if (isCorrect) {
-      await giveSuccessFeedback();
-    } else {
-      setAttempts(prev => prev + 1);
-      if (attempts < 2) {
-        await giveCorrectionFeedback();
-      } else {
-        await giveFinalFeedback();
-      }
-    }
-  };
-
-  // Success feedback
-  const giveSuccessFeedback = async () => {
-    const successMessages = [
-      "Excellent! You said it perfectly!",
-      "Great job! That's exactly right!",
-      "Wonderful! You know your numbers!",
-      "Perfect! You're learning so well!"
-    ];
-    
-    const message = successMessages[Math.floor(Math.random() * successMessages.length)];
-    setFeedback(message);
-    
-    try {
-      const { audio } = await speakText(message, 0.8, userGrade);
-      await playAudio(audio);
-    } catch (error) {
-      console.error('Feedback TTS failed:', error);
-    }
-    
-    setTimeout(() => {
       setPhase('trace');
-      setTimeout(() => {
-        setPhase('complete');
-        onComplete?.();
-      }, 3000);
-    }, 2000);
-  };
+      await new Promise((r) => setTimeout(r, 2000));
+      if (cancelled) return;
 
-  // Correction feedback
-  const giveCorrectionFeedback = async () => {
-    const message = `I heard "${userResponse}". The correct answer is ${number}. Let's try again!`;
-    setFeedback(message);
-    
-    try {
-      const { audio } = await speakText(message, 0.7, userGrade);
-      await playAudio(audio);
-    } catch (error) {
-      console.error('Correction TTS failed:', error);
-    }
-    
-    setTimeout(() => {
-      startSayPhase();
-    }, 2500);
-  };
+      setPhase('complete');
+      onComplete?.();
+    };
 
-  // Final attempt feedback
-  const giveFinalFeedback = async () => {
-    const message = `That's okay! The answer is ${number}. You'll get it next time!`;
-    setFeedback(message);
-    
-    try {
-      const { audio } = await speakText(message, 0.8, userGrade);
-      await playAudio(audio);
-    } catch (error) {
-      console.error('Final feedback TTS failed:', error);
-    }
-    
-    setTimeout(() => {
-      setPhase('trace');
-      setTimeout(() => {
-        setPhase('complete');
-        onComplete?.();
-      }, 3000);
-    }, 2000);
-  };
+    run();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [number]);
 
   // Helper function to play audio
   const playAudio = (base64: string): Promise<void> => {
@@ -252,12 +117,6 @@ export default function NumberCard({
         audio.play().catch(() => resolve());
       }
     });
-  };
-
-  // Convert number to word
-  const getNumberWord = (num: number): string => {
-    const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
-    return words[num] || num.toString();
   };
 
   // Render objects for visual counting
@@ -311,10 +170,10 @@ export default function NumberCard({
   const getPhaseText = () => {
     switch (phase) {
       case 'see': return 'Look at the number';
-      case 'hear': return isPlaying ? 'Listen carefully...' : 'Ready to speak!';
-      case 'say': return isListening ? 'Listening...' : 'Say the number';
+      case 'hear': return isPlaying ? 'Listen carefully...' : 'Ready!';
+      case 'say': return 'Now you say it!';
       case 'trace': return 'Great! Now practice writing';
-      case 'feedback': return feedback;
+      case 'feedback': return 'Well done!';
       case 'complete': return 'Lesson complete!';
       default: return 'Learning numbers';
     }
@@ -331,7 +190,7 @@ export default function NumberCard({
       </div>
 
       {/* Main Learning Card */}
-      <div className={`w-[400px] h-[400px] ${getPhaseColor()} rounded-3xl flex flex-col items-center justify-center shadow-xl transition-all duration-500 transform ${isListening ? 'scale-105 ring-4 ring-yellow-300' : ''}`}>
+      <div className={`w-[400px] h-[400px] ${getPhaseColor()} rounded-3xl flex flex-col items-center justify-center shadow-xl transition-all duration-500 transform ${phase === 'say' ? 'scale-105 ring-4 ring-yellow-300' : ''}`}>
         
         {/* Objects for counting (if enabled) */}
         {renderObjects()}
@@ -345,7 +204,7 @@ export default function NumberCard({
         <div className="text-center mt-4 px-4">
           {phase === 'say' && (
             <p className="text-white text-xl font-semibold">
-              {isListening ? "🎤 I'm listening..." : `Say: "${number}"`}
+              Say: "{number}"
             </p>
           )}
           
