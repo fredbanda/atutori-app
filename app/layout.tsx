@@ -11,9 +11,9 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Eatutori - AI Learning for Kids",
+  title: "Eatutori - The world's most comprehensive learning platform",
   description:
-    "A fun, gamified AI learning platform for primary school students aged 7-12",
+    "A fun, gamified, Cambridge International Syllabus, powered learning platform for primary school students aged 5-18",
   icons: {
     icon: [
       {

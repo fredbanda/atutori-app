@@ -1146,7 +1146,7 @@ export default function LessonPage({
           </div>
           <h2 className="text-xl font-bold mb-2">Generating Your Lesson</h2>
           <p className="text-muted-foreground">
-            AI is creating a personalized {subjectId} lesson for {gradeGroup}...
+            We are creating a personalized {subjectId} lesson for {gradeGroup}...
           </p>
           <div className="mt-4 flex items-center justify-center gap-2">
             <Sparkles className="h-4 w-4 text-amber-500" />
