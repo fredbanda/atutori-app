@@ -1,0 +1,70 @@
+name: eTriage Generated Pipeline
+'on':
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+env: {}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up runtime
+      uses: actions/setup-python@v5
+    - name: Install dependencies
+      run: echo 'no build commands'
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run tests
+      run: echo 'no test commands'
+  lint:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run linter
+      run: echo 'no lint commands'
+  security_scan:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v4
+    - name: Security scan
+      run: echo 'no security scan commands'
+  deploy:
+    runs-on: ubuntu-latest
+    needs:
+    - test
+    - lint
+    - security_scan
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - uses: actions/checkout@v4
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+    - name: Deploy
+      run: echo 'no deploy commands'
+    - name: Notify eTriage monitor
+      if: failure()
+      run: 'curl -X POST ${{ secrets.ETRIAGE_WEBHOOK_URL }} -H ''Content-Type: application/json''
+        -d ''{"pipeline_id":"${{ github.run_id }}","job_id":"deploy","error_type":"deploy_failure","logs":"Deploy
+        stage failed on ${{ github.sha }}","source":"github_actions"}'''
+  monitor:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: always()
+    steps:
+    - name: Report pipeline status to eTriage
+      run: 'curl -X POST ${{ secrets.ETRIAGE_WEBHOOK_URL }} -H ''Content-Type: application/json''
+        -d ''{"pipeline_id":"${{ github.run_id }}","job_id":"monitor","error_type":"pipeline_complete","logs":"Pipeline
+        finished with status: ${{ job.status }}","source":"github_actions"}'''
