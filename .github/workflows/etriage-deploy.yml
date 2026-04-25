@@ -1,0 +1,97 @@
+name: eTriage Generated Pipeline
+'on':
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: ${{ secrets.GCP_REGION }}
+  SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  REDIS_URL: ${{ secrets.REDIS_URL }}
+  CLOUDSQL_INSTANCE: ${{ secrets.CLOUDSQL_INSTANCE }}
+  NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+  NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+  NODE_ENV: ${{ secrets.NODE_ENV }}
+  GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+  ETRIAGE_WEBHOOK_URL: ${{ secrets.ETRIAGE_WEBHOOK_URL }}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up runtime
+      uses: actions/setup-node@v4
+    - name: Install dependencies
+      run: 'npm ci
+
+        npm run build'
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run tests
+      run: 'npm run test -- --ci --coverage --maxWorkers=2
+
+        npx prisma generate
+
+        npx prisma migrate deploy --preview-feature'
+  lint:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run linter
+      run: 'npm run lint
+
+        npx tsc --noEmit'
+  security_scan:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v4
+    - name: Security scan
+      run: 'npm audit --audit-level=high
+
+        npx snyk test --severity-threshold=high
+
+        docker scan $IMAGE_NAME || true'
+  deploy:
+    runs-on: ubuntu-latest
+    needs:
+    - test
+    - lint
+    - security_scan
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - uses: actions/checkout@v4
+    - name: Authenticate to GCP
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+    - name: Deploy
+      run: 'gcloud builds submit --tag gcr.io/$GCP_PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
+
+        gcloud run deploy $SERVICE_NAME --image gcr.io/$GCP_PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA
+        --platform managed --region $GCP_REGION --allow-unauthenticated --set-env-vars
+        DATABASE_URL=$DATABASE_URL,REDIS_URL=$REDIS_URL,NODE_ENV=production --add-cloudsql-instances
+        $CLOUDSQL_INSTANCE --memory 1Gi --cpu 2 --min-instances 1 --max-instances
+        10'
+    - name: Notify eTriage monitor
+      if: failure()
+      run: 'curl -X POST ${{ secrets.ETRIAGE_WEBHOOK_URL }} -H ''Content-Type: application/json''
+        -d ''{"pipeline_id":"${{ github.run_id }}","job_id":"deploy","error_type":"deploy_failure","logs":"Deploy
+        stage failed on ${{ github.sha }}","source":"github_actions"}'''
+  monitor:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: always()
+    steps:
+    - name: Report pipeline status to eTriage
+      run: 'curl -X POST ${{ secrets.ETRIAGE_WEBHOOK_URL }} -H ''Content-Type: application/json''
+        -d ''{"pipeline_id":"${{ github.run_id }}","job_id":"monitor","error_type":"pipeline_complete","logs":"Pipeline
+        finished with status: ${{ job.status }}","source":"github_actions"}'''
